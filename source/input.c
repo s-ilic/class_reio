@@ -2158,6 +2158,12 @@ int input_read_parameters_general(struct file_content * pfc,
     else if (strcmp(string1,"reio_inter") == 0){
       pth->reio_parametrization = reio_inter;
     }
+    else if (strcmp(string1,"reio_two_stages") == 0){
+      pth->reio_parametrization = reio_two_stages;
+    }
+    else if (strcmp(string1,"reio_flexknot") == 0){
+      pth->reio_parametrization = reio_flexknot;
+    }
     else{
       class_stop(errmsg,
                  "You specified 'reio_parametrization' as '%s'. It has to be one of {'reio_none','reio_camb','reio_bins_tanh','reio_half_tanh','reio_many_tanh','reio_inter'}.",string1);
@@ -2223,6 +2229,34 @@ int input_read_parameters_general(struct file_content * pfc,
     class_read_int("reio_inter_num",pth->reio_inter_num);
     class_read_list_of_doubles("reio_inter_z",pth->reio_inter_z,pth->reio_inter_num);
     class_read_list_of_doubles("reio_inter_xe",pth->reio_inter_xe,pth->reio_inter_num);
+    break;
+
+    /** 8.e) reionization parameters if reio_parametrization=reio_two_stages */
+  case reio_two_stages:
+    /* Read */
+    class_read_double("reio_xe_smoothing",pth->reio_xe_smoothing);
+    class_read_double("reio_z_end",pth->reio_z_end);
+    class_read_double("reio_z_mid",pth->reio_z_mid);
+    class_read_double("reio_z_begin",pth->reio_z_begin);
+    class_read_double("reio_f_xe_mid",pth->reio_f_xe_mid);
+    class_read_int("reio_lowz_type",pth->reio_lowz_type);
+    class_read_int("reio_highz_type",pth->reio_highz_type);
+    class_read_double("reio_lowz_B",pth->reio_lowz_B);
+    class_read_double("reio_lowz_C",pth->reio_lowz_C);
+    class_read_double("reio_lowz_E",pth->reio_lowz_E);
+    class_read_double("reio_highz_B",pth->reio_highz_B);
+    class_read_double("reio_highz_C",pth->reio_highz_C);
+    class_read_double("reio_highz_E",pth->reio_highz_E);
+    class_read_double("helium_fullreio_z_start",pth->helium_fullreio_z_start);
+    class_read_double("helium_fullreio_delta_z",pth->helium_fullreio_delta_z);
+    break;
+
+    /** 8.f) reionization parameters if reio_parametrization=reio_flexknot */
+  case reio_flexknot:
+    /* Read */
+    class_read_int("reio_reio_flexknot_num",pth->reio_reio_flexknot_num);
+    class_read_list_of_doubles("reio_reio_flexknot_z",pth->reio_reio_flexknot_z,pth->reio_reio_flexknot_num);
+    class_read_list_of_doubles("reio_reio_flexknot_xe",pth->reio_reio_flexknot_xe,pth->reio_reio_flexknot_num);
     break;
 
   default:
@@ -5658,6 +5692,27 @@ int input_default_params(struct background *pba,
   pth->reio_inter_num = 0;
   pth->reio_inter_z = NULL;
   pth->reio_inter_xe = NULL;
+  /** 8.e) 'reio_two_stages' case */
+  pth->reio_xe_smoothing = 0.;
+  pth->reio_z_end = 6.;
+  pth->reio_z_mid = 10.;
+  pth->reio_z_begin = 14.;
+  pth->reio_f_xe_mid = 0.5;
+  pth->reio_lowz_type = 1;
+  pth->reio_highz_type = 1;
+  pth->reio_lowz_B = 1.;
+  pth->reio_lowz_C = 1.;
+  pth->reio_lowz_E = 1.;
+  pth->reio_highz_B = -1.;
+  pth->reio_highz_C = 1.;
+  pth->reio_highz_E = 1.;
+  pth->helium_fullreio_z_start = 5.;
+  pth->helium_fullreio_delta_z = 3.;
+  /** 8.f) 'reio_flexknot' case */
+  pth->reio_flexknot_num = 0;
+  pth->reio_flexknot_z = NULL;
+  pth->reio_flexknot_xe = NULL;
+
 
   /** 9) Damping scale */
   pth->compute_damping_scale = _FALSE_;

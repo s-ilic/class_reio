@@ -29,7 +29,9 @@ enum reionization_parametrization {
                                    reio_bins_tanh,  /**< binned reionization history with tanh inteprolation between bins */
                                    reio_half_tanh,  /**< half a tanh, instead of the full tanh */
                                    reio_many_tanh,  /**< similar to reio_camb but with more than one tanh */
-                                   reio_inter       /**< linear interpolation between specified points */
+                                   reio_inter,       /**< linear interpolation between specified points */
+                                   reio_two_stages,  /**< two-stage reionization  */
+                                   reio_flexknot  /**< flexknot reionization  */
 };
 
 /**
@@ -125,6 +127,46 @@ struct thermodynamics
   double * reio_inter_z; /**< discrete z values */
 
   double * reio_inter_xe; /**< discrete \f$ X_e(z)\f$ values */
+
+  /** parameters for reio_two_stages (ADD COMMENTS) */
+
+  double reio_xe_smoothing;
+
+  double reio_z_end;
+
+  double reio_z_mid;
+
+  double reio_z_begin;
+
+  double reio_f_xe_mid;
+
+  int reio_lowz_type;
+
+  int reio_highz_type;
+
+  double reio_lowz_B;
+
+  double reio_lowz_C;
+
+  double reio_lowz_E;
+
+  double reio_highz_B;
+
+  double reio_highz_C;
+
+  double reio_highz_E;
+
+  double helium_fullreio_z_start;
+
+  double helium_fullreio_delta_z;
+
+  /** parameters for reio_flexknot (ADD COMMENTS) */
+
+  int reio_flexknot_num;
+
+  double * reio_flexknot_z;
+
+  double * reio_flexknot_xe;
 
   /** parameters for energy injection */
 
@@ -431,6 +473,26 @@ struct thermo_reionization_parameters{
   int index_re_first_z;        /**< redshift at which we start to impose reionization function */
   int index_re_first_xe;       /**< ionization fraction at redshift first_z (inferred from recombination code) */
   int index_re_step_sharpness; /**< sharpness of tanh jump */
+
+  /* parameters used by reio_two_stages */
+
+  int index_reio_z_before;
+  int index_reio_dxedz_before;
+  int index_reio_xe_smoothing;
+  int index_reio_z_end;
+  int index_reio_z_mid;
+  int index_reio_z_begin;
+  int index_reio_f_xe_mid;
+  int index_reio_lowz_type;
+  int index_reio_highz_type;
+  int index_reio_lowz_B;
+  int index_reio_lowz_C;
+  int index_reio_lowz_E;
+  int index_reio_highz_B;
+  int index_reio_highz_C;
+  int index_reio_highz_E;
+  int index_helium_fullreio_z_start;
+  int index_helium_fullreio_delta_z;
 
   /* parameters used by all schemes */
 
