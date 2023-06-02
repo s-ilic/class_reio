@@ -90,6 +90,10 @@ struct thermodynamics
   short has_idm_g;    /**< Do we have idm with photons? */
   short has_idm_dr;   /**< Do we have idm with dark radiation? */
 
+  /** parameters for interpolation */
+
+  double reio_interp_type; /**< type of special interpolation at low z (0==linear, 0!=PCHIP) */
+
   /** parameters for reio_camb */
 
   double reionization_width; /**< width of H reionization */
@@ -278,6 +282,12 @@ struct thermodynamics
   //@{
 
   double * d2thermodynamics_dz2_table; /**< table d2thermodynamics_dz2_table[index_z*pth->tt_size+pba->index_th] with values of \f$ d^2 t_i / dz^2 \f$ (array of size th_size*tt_size) */
+
+  //@}
+
+  //@{
+
+  double * PCHIP_slope_table; /**< table PCHIP_slope_table[index_z*pth->tt_size+pba->index_th] with values of PCHIP slopes (array of size th_size*tt_size) */
 
   //@}
 

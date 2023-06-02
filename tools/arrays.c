@@ -712,6 +712,74 @@ int array_spline_table_lines(
   return _SUCCESS_;
  }
 
+int array_PCHIP_table_lines(
+			     double * x, /* vector of size nx */
+			     int nx,
+			     double * y, /* array of size nx*ny with elements
+						  y[index_x*ny+index_y] */
+			     int ny,
+			     double * f, /* array of size nx*ny */
+			     ErrorMsg errmsg
+			     ) {
+
+  double h1, h2, d1, d2, w1, w2, t;
+  int ix;
+  int iy;
+
+  // Special case ix == 0
+  h1 = x[1] - x[0];
+  h2 = x[2] - x[1];
+  for (iy=0; iy < ny; iy++) {
+    d1 = (y[ny+iy]-y[iy]) / h1;
+    d2 = (y[2*ny+iy]-y[ny+iy]) / h2;
+    t = ((2. * h1 + h2) * d1 - h1 * d2) / (h1 + h2);
+    f[iy] = t;
+    if ((t * d1) < 0.) {
+      f[iy] = 0.;
+    }
+    else if (((d1 * d2) < 0.) && (fabs(t)>fabs(3.*d1))) {
+      f[iy] = 3. * d1;
+    }
+  }
+
+  // Special case ix == nx-1
+  h1 = x[nx-2] - x[nx-3];
+  h2 = x[nx-1] - x[nx-2];
+  for (iy=0; iy < ny; iy++) {
+      d1 = (y[(nx-2)*ny+iy]-y[(nx-3)*ny+iy]) / h1;
+      d2 = (y[(nx-1)*ny+iy]-y[(nx-2)*ny+iy]) / h2;
+      t = ((2. * h2 + h1) * d2 - h2 * d1) / (h1 + h2);
+      f[(nx-1)*ny+iy] = t;
+      if ((t * d2) < 0.) {
+        f[(nx-1)*ny+iy] = 0.;
+      }
+      else if (((d1 * d2) < 0.) && (fabs(t)>fabs(3.*d2))) {
+        f[(nx-1)*ny+iy] = 3. * d2;
+      }
+  }
+
+  // All other ix
+  for (ix=1; ix < (nx-1); ix++) {
+    h1 = x[ix] - x[ix-1];
+    h2 = x[ix+1] - x[ix];
+    for (iy=0; iy < ny; iy++) {
+      d1 = (y[ix*ny+iy]-y[(ix-1)*ny+iy]) / h1;
+      d2 = (y[(ix+1)*ny+iy]-y[ix*ny+iy]) / h2;
+      if ((d1 * d2) < 0.) {
+        f[ix*ny+iy] = 0.;
+      }
+      else {
+        w1 = 2. * h2 + h1;
+        w2 = h2 + 2. * h1;
+        f[ix*ny+iy] = (w1 + w2) / (w1 / d1 + w2 / d2);
+      }
+    }
+  }
+
+  return _SUCCESS_;
+ }
+
+
 int array_logspline_table_lines(
 			     double * x, /* vector of size x_size */
 			     int x_size,
@@ -2017,6 +2085,88 @@ int array_interpolate_linear(
   return _SUCCESS_;
 }
 
+int array_interpolate_PCHIP(
+			     double * x_array,
+			     int n_lines,
+			     double * array,
+			     double * f_array,
+			     int n_columns,
+			     double x,
+			     int * last_index,
+			     double * result,
+			     int result_size, /** from 1 to n_columns */
+			     ErrorMsg errmsg) {
+
+  int inf,sup,mid,i;
+  double h0,t,t2,t3,h00,h10,h01,h11;
+
+  inf=0;
+  sup=n_lines-1;
+
+  if (x_array[inf] < x_array[sup]){
+
+    if (x < x_array[inf]) {
+      sprintf(errmsg,"%s(L:%d) : x=%e < x_min=%e",__func__,__LINE__,x,x_array[inf]);
+      return _FAILURE_;
+    }
+
+    if (x > x_array[sup]) {
+      sprintf(errmsg,"%s(L:%d) : x=%e > x_max=%e",__func__,__LINE__,x,x_array[sup]);
+      return _FAILURE_;
+    }
+
+    while (sup-inf > 1) {
+
+      mid=(int)(0.5*(inf+sup));
+      if (x < x_array[mid]) {sup=mid;}
+      else {inf=mid;}
+
+    }
+
+  }
+
+  else {
+
+    if (x < x_array[sup]) {
+      sprintf(errmsg,"%s(L:%d) : x=%e < x_min=%e",__func__,__LINE__,x,x_array[sup]);
+      return _FAILURE_;
+    }
+
+    if (x > x_array[inf]) {
+      sprintf(errmsg,"%s(L:%d) : x=%e > x_max=%e",__func__,__LINE__,x,x_array[inf]);
+      return _FAILURE_;
+    }
+
+    while (sup-inf > 1) {
+
+      mid=(int)(0.5*(inf+sup));
+      if (x > x_array[mid]) {sup=mid;}
+      else {inf=mid;}
+
+    }
+
+  }
+
+  *last_index = inf;
+
+  h0 = x_array[sup] - x_array[inf];
+  t = (x - x_array[inf]) / h0;
+  t2 = t * t;
+  t3 = t * t * t;
+  h00 = 2.0 * t3 - 3.0 * t2 + 1.0;
+  h10 = t3 - 2.0 * t2 + t;
+  h01 = -2.0 * t3 + 3.0 * t2;
+  h11 = t3 - t2;
+
+  for (i=0; i<result_size; i++)
+    *(result+i) =
+      h00 * *(array+inf*n_columns+i) +
+      h10 * h0 * *(f_array+inf*n_columns+i) +
+      h01 * *(array+sup*n_columns+i) +
+      h11 * h0 * *(f_array+sup*n_columns+i);
+
+  return _SUCCESS_;
+}
 
 /**
  * interpolate to get y_i(x), when x and y_i are in different arrays

@@ -232,17 +232,36 @@ int thermodynamics_at_z(
     if (((pth->reio_parametrization == reio_half_tanh) && (z < 2*pth->z_reio))
         || ((pth->reio_parametrization == reio_inter) && (z < 50.))) {
 
-      class_call(array_interpolate_linear(pth->z_table,
-                                          pth->tt_size,
-                                          pth->thermodynamics_table,
-                                          pth->th_size,
-                                          z,
-                                          last_index,
-                                          pvecthermo,
-                                          pth->th_size,
-                                          pth->error_message),
-                 pth->error_message,
-                 pth->error_message);
+      if (pth->reio_interp_type == 0.) {
+        class_call(array_interpolate_linear(pth->z_table,
+                                            pth->tt_size,
+                                            pth->thermodynamics_table,
+                                            pth->th_size,
+                                            z,
+                                            last_index,
+                                            pvecthermo,
+                                            pth->th_size,
+                                            pth->error_message),
+                   pth->error_message,
+                   pth->error_message);
+
+      }
+    /* new PCHIP interpolation for smoothness */
+      else {
+        class_call(array_interpolate_PCHIP(pth->z_table,
+                                            pth->tt_size,
+                                            pth->thermodynamics_table,
+                                            pth->PCHIP_slope_table,
+                                            pth->th_size,
+                                            z,
+                                            last_index,
+                                            pvecthermo,
+                                            pth->th_size,
+                                            pth->error_message),
+                   pth->error_message,
+                   pth->error_message);
+      }
+
     }
 
     /* in the "normal" case, use spline interpolation */
@@ -452,6 +471,7 @@ int thermodynamics_free(
   free(pth->tau_table);
   free(pth->thermodynamics_table);
   free(pth->d2thermodynamics_dz2_table);
+  free(pth->PCHIP_slope_table);
 
   return _SUCCESS_;
 }
@@ -1071,6 +1091,7 @@ int thermodynamics_lists(
   class_alloc(pth->z_table,pth->tt_size*sizeof(double),pth->error_message);
   class_alloc(pth->thermodynamics_table,pth->th_size*pth->tt_size*sizeof(double),pth->error_message);
   class_alloc(pth->d2thermodynamics_dz2_table,pth->th_size*pth->tt_size*sizeof(double),pth->error_message);
+  class_alloc(pth->PCHIP_slope_table,pth->th_size*pth->tt_size*sizeof(double),pth->error_message);
 
   /** - define time sampling */
 
@@ -1715,6 +1736,17 @@ int thermodynamics_calculate_remaining_quantities(
                                       pth->error_message),
              pth->error_message,
              pth->error_message);
+
+  /** - fill tables of slopes (in view of PCHIP interpolation) */
+  class_call(array_PCHIP_table_lines(pth->z_table,
+                                      pth->tt_size,
+                                      pth->thermodynamics_table,
+                                      pth->th_size,
+                                      pth->PCHIP_slope_table,
+                                      pth->error_message),
+             pth->error_message,
+             pth->error_message);
+
 
   class_call(thermodynamics_calculate_recombination_quantities(ppr,pba,pth,pvecback),
              pth->error_message,

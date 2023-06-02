@@ -2134,6 +2134,14 @@ int input_read_parameters_general(struct file_content * pfc,
   }
 
   /** 8) Reionization parametrization */
+
+    class_call(parser_read_double(pfc,"reio_interp_type",&param1,&flag1,errmsg),
+               errmsg,
+               errmsg);
+    if (flag1 == _TRUE_){
+      pth->reio_interp_type=param1;
+    }
+
   /* Read */
   class_call(parser_read_string(pfc,"reio_parametrization",&string1,&flag1,errmsg),
              errmsg,
@@ -2254,9 +2262,9 @@ int input_read_parameters_general(struct file_content * pfc,
     /** 8.f) reionization parameters if reio_parametrization=reio_flexknot */
   case reio_flexknot:
     /* Read */
-    class_read_int("reio_reio_flexknot_num",pth->reio_reio_flexknot_num);
-    class_read_list_of_doubles("reio_reio_flexknot_z",pth->reio_reio_flexknot_z,pth->reio_reio_flexknot_num);
-    class_read_list_of_doubles("reio_reio_flexknot_xe",pth->reio_reio_flexknot_xe,pth->reio_reio_flexknot_num);
+    class_read_int("reio_flexknot_num",pth->reio_flexknot_num);
+    class_read_list_of_doubles("reio_flexknot_z",pth->reio_flexknot_z,pth->reio_flexknot_num);
+    class_read_list_of_doubles("reio_flexknot_xe",pth->reio_flexknot_xe,pth->reio_flexknot_num);
     break;
 
   default:
@@ -5668,6 +5676,7 @@ int input_default_params(struct background *pba,
   pth->recfast_photoion_mode=recfast_photoion_Tmat;
 
   /** 8) Parametrization of reionization */
+  pth->reio_interp_type=0.;
   pth->reio_parametrization=reio_camb;
   /** 8.a) 'reio_camb' or 'reio_half_tanh' case */
   pth->reio_z_or_tau=reio_z;
