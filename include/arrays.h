@@ -292,6 +292,18 @@ int array_integrate_all_trapzd_or_spline(
 			       int result_size, /** from 1 to n_columns */
 			       ErrorMsg errmsg);
 
+  int array_interpolate_PCHIP_growing_closeby(
+			       double * x_array,
+			       int n_lines,
+			       double * array,
+			       double * f_array,
+			       int n_columns,
+			       double x,
+			       int * last_index,
+			       double * result,
+			       int result_size, /** from 1 to n_columns */
+			       ErrorMsg errmsg);
+
   int array_interpolate_spline_transposed(double * array,
                                           int x_size,
                                           int y_size,

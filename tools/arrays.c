@@ -2168,6 +2168,66 @@ int array_interpolate_PCHIP(
   return _SUCCESS_;
 }
 
+
+int array_interpolate_PCHIP_growing_closeby(
+			     double * x_array,
+			     int n_lines,
+			     double * array,
+			     double * f_array,
+			     int n_columns,
+			     double x,
+			     int * last_index,
+			     double * result,
+			     int result_size, /** from 1 to n_columns */
+			     ErrorMsg errmsg) {
+
+  int inf,sup,i;
+  double h0,t,t2,t3,h00,h10,h01,h11;
+
+  inf = *last_index;
+  class_test(inf<0 || inf>(n_lines-1),
+	     errmsg,
+	     "*lastindex=%d out of range [0:%d]\n",inf,n_lines-1);
+  while (x < x_array[inf]) {
+    inf--;
+    if (inf < 0) {
+      sprintf(errmsg,"%s(L:%d) : x=%e < x_min=%e",__func__,__LINE__,
+	      x,x_array[0]);
+      return _FAILURE_;
+    }
+  }
+  sup = inf+1;
+  while (x > x_array[sup]) {
+    sup++;
+    if (sup > (n_lines-1)) {
+      sprintf(errmsg,"%s(L:%d) : x=%e > x_max=%e",__func__,__LINE__,
+	      x,x_array[n_lines-1]);
+      return _FAILURE_;
+    }
+  }
+  inf = sup-1;
+
+  *last_index = inf;
+
+  h0 = x_array[sup] - x_array[inf];
+  t = (x - x_array[inf]) / h0;
+  t2 = t * t;
+  t3 = t * t * t;
+  h00 = 2.0 * t3 - 3.0 * t2 + 1.0;
+  h10 = t3 - 2.0 * t2 + t;
+  h01 = -2.0 * t3 + 3.0 * t2;
+  h11 = t3 - t2;
+
+  for (i=0; i<result_size; i++)
+    *(result+i) =
+      h00 * *(array+inf*n_columns+i) +
+      h10 * h0 * *(f_array+inf*n_columns+i) +
+      h01 * *(array+sup*n_columns+i) +
+      h11 * h0 * *(f_array+sup*n_columns+i);
+
+  return _SUCCESS_;
+}
+
 /**
  * interpolate to get y_i(x), when x and y_i are in different arrays
  *

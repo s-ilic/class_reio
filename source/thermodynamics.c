@@ -230,6 +230,7 @@ int thermodynamics_at_z(
 
   if (pth->reio_interp_type != 0.) {
 
+      if (inter_mode == inter_normal) {
         class_call(array_interpolate_PCHIP(pth->z_table,
                                             pth->tt_size,
                                             pth->thermodynamics_table,
@@ -242,6 +243,22 @@ int thermodynamics_at_z(
                                             pth->error_message),
                    pth->error_message,
                    pth->error_message);
+      }
+
+      if (inter_mode == inter_closeby) {
+        class_call(array_interpolate_PCHIP_growing_closeby(pth->z_table,
+                                                           pth->tt_size,
+                                                           pth->thermodynamics_table,
+                                                           pth->PCHIP_slope_table,
+                                                           pth->th_size,
+                                                           z,
+                                                           last_index,
+                                                           pvecthermo,
+                                                           pth->th_size,
+                                                           pth->error_message),
+                   pth->error_message,
+                   pth->error_message);
+      }
   }
   else {
 
