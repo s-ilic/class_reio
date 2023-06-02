@@ -228,26 +228,8 @@ int thermodynamics_at_z(
 
   else {
 
-    /* some very specific cases require linear interpolation because of a break in the derivative of the functions */
-    if (((pth->reio_parametrization == reio_half_tanh) && (z < 2*pth->z_reio))
-        || ((pth->reio_parametrization == reio_inter) && (z < 50.))) {
+  if (pth->reio_interp_type != 0.) {
 
-      if (pth->reio_interp_type == 0.) {
-        class_call(array_interpolate_linear(pth->z_table,
-                                            pth->tt_size,
-                                            pth->thermodynamics_table,
-                                            pth->th_size,
-                                            z,
-                                            last_index,
-                                            pvecthermo,
-                                            pth->th_size,
-                                            pth->error_message),
-                   pth->error_message,
-                   pth->error_message);
-
-      }
-    /* new PCHIP interpolation for smoothness */
-      else {
         class_call(array_interpolate_PCHIP(pth->z_table,
                                             pth->tt_size,
                                             pth->thermodynamics_table,
@@ -260,7 +242,24 @@ int thermodynamics_at_z(
                                             pth->error_message),
                    pth->error_message,
                    pth->error_message);
-      }
+  }
+  else {
+
+    /* some very specific cases require linear interpolation because of a break in the derivative of the functions */
+    if (((pth->reio_parametrization == reio_half_tanh) && (z < 2*pth->z_reio))
+        || ((pth->reio_parametrization == reio_inter) && (z < 50.))) {
+
+        class_call(array_interpolate_linear(pth->z_table,
+                                            pth->tt_size,
+                                            pth->thermodynamics_table,
+                                            pth->th_size,
+                                            z,
+                                            last_index,
+                                            pvecthermo,
+                                            pth->th_size,
+                                            pth->error_message),
+                   pth->error_message,
+                   pth->error_message);
 
     }
 
@@ -301,6 +300,8 @@ int thermodynamics_at_z(
       }
     }
   }
+  }
+
   return _SUCCESS_;
 }
 
