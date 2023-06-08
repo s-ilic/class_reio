@@ -4563,10 +4563,6 @@ int thermodynamics_reionization_function(
         preio->reionization_parameters[preio->index_re_first_f+preio->re_z_size-2] = (w1 + w2) / (w1 / d1 + w2 / d2);
       }
 
-      for (ix=0; ix<preio->re_z_size; ix++) {
-        printf("z=%20.15e, xe=%20.15e, f=%20.15e\n",preio->reionization_parameters[preio->index_re_first_z+ix],preio->reionization_parameters[preio->index_re_first_xe+ix],preio->reionization_parameters[preio->index_re_first_f+ix]);
-      }
-
       class_test(z<z_min,
                  pth->error_message,
                  "z out of range for reionization interpolation");
@@ -4588,8 +4584,6 @@ int thermodynamics_reionization_function(
            h10 * h0 * preio->reionization_parameters[preio->index_re_first_f+i] +
            h01 * preio->reionization_parameters[preio->index_re_first_xe+i+1] +
            h11 * h0 * preio->reionization_parameters[preio->index_re_first_f+i+1];
-
-      printf("current z=%20.15e, xe=%20.15e\n", z, *x);
 
       class_test(*x<0.,
                  pth->error_message,
