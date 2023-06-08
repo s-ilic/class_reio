@@ -1076,6 +1076,7 @@ int thermodynamics_indices(
     class_define_index(ptrp->index_re_first_xe,_TRUE_,index_re,ptrp->re_z_size);
     class_define_index(ptrp->index_re_first_f,_TRUE_,index_re,ptrp->re_z_size);
     class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
+    class_define_index(ptrp->index_re_last_xe,_TRUE_,index_re,1);
     break;
 
   default:
@@ -1507,6 +1508,9 @@ int thermodynamics_set_parameters_reionization(
 
     /** - (f) if reionization implemented with reio_flexknot scheme */
   case reio_flexknot:
+
+    /* initialize last xe to -1*/
+    preio->reionization_parameters[preio->index_re_last_xe] = -1.;
 
     /* this parametrization requires at least one point (z,xe) */
     class_test(pth->reio_flexknot_num<3,
@@ -4521,6 +4525,11 @@ int thermodynamics_reionization_function(
       *x = preio->reionization_parameters[preio->index_re_xe_before];
     }
     else{
+
+      if (preio->reionization_parameters[preio->index_re_last_xe] == -1.) {
+        preio->reionization_parameters[preio->index_re_last_xe] = preio->reionization_parameters[preio->index_re_xe_before];
+      }
+
       i=0;
       while (preio->reionization_parameters[preio->index_re_first_z+i+1] < z) i++;
 
@@ -4528,7 +4537,7 @@ int thermodynamics_reionization_function(
       z_max = preio->reionization_parameters[preio->index_re_first_z+i+1];
 
       /* fix the final xe to xe_before*/
-      preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-1] = preio->reionization_parameters[preio->index_re_xe_before];
+      preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-1] = preio->reionization_parameters[preio->index_re_last_xe];
 
       /* fix the PCHIP slopes that involve the final xe*/
       h1 = preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-2] - preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-3];
