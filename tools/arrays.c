@@ -734,10 +734,10 @@ int array_PCHIP_table_lines(
     d2 = (y[2*ny+iy]-y[ny+iy]) / h2;
     t = ((2. * h1 + h2) * d1 - h1 * d2) / (h1 + h2);
     f[iy] = t;
-    if ((t * d1) < 0.) {
+    if (SIGNUM(t)!=SIGNUM(d1)) {
       f[iy] = 0.;
     }
-    else if (((d1 * d2) < 0.) && (fabs(t)>fabs(3.*d1))) {
+    else if ((SIGNUM(d1)!=SIGNUM(d2)) && (fabs(t)>fabs(3.*d1))) {
       f[iy] = 3. * d1;
     }
   }
@@ -750,10 +750,10 @@ int array_PCHIP_table_lines(
       d2 = (y[(nx-1)*ny+iy]-y[(nx-2)*ny+iy]) / h2;
       t = ((2. * h2 + h1) * d2 - h2 * d1) / (h1 + h2);
       f[(nx-1)*ny+iy] = t;
-      if ((t * d2) < 0.) {
+      if (SIGNUM(f)!=SIGNUM(d2)) {
         f[(nx-1)*ny+iy] = 0.;
       }
-      else if (((d1 * d2) < 0.) && (fabs(t)>fabs(3.*d2))) {
+      else if ((SIGNUM(d1)!=SIGNUM(d2)) && (fabs(t)>fabs(3.*d2))) {
         f[(nx-1)*ny+iy] = 3. * d2;
       }
   }
@@ -765,7 +765,7 @@ int array_PCHIP_table_lines(
     for (iy=0; iy < ny; iy++) {
       d1 = (y[ix*ny+iy]-y[(ix-1)*ny+iy]) / h1;
       d2 = (y[(ix+1)*ny+iy]-y[ix*ny+iy]) / h2;
-      if ((d1 * d2) < 0.) {
+      if (SIGNUM(d1)!=SIGNUM(d2)) {
         f[ix*ny+iy] = 0.;
       }
       else {
