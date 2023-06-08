@@ -168,6 +168,8 @@ struct thermodynamics
 
   int reio_flexknot_num;
 
+  int reio_flexknot_reorder_z;
+
   double * reio_flexknot_z;
 
   double * reio_flexknot_xe;
@@ -477,12 +479,13 @@ struct thermo_reionization_parameters{
   int index_re_helium_fullreio_redshift; /**< helium full reionization redshift */
   int index_re_helium_fullreio_width;    /**< a width defining the duration of helium full reionization in the reio_camb scheme */
 
-  /* parameters used by reio_bins_tanh, reio_many_tanh, reio_inter */
+  /* parameters used by reio_bins_tanh, reio_many_tanh, reio_inter, reio_flexknot */
 
   int re_z_size;                /**< number of reionization jumps */
   int index_re_first_z;        /**< redshift at which we start to impose reionization function */
   int index_re_first_xe;       /**< ionization fraction at redshift first_z (inferred from recombination code) */
   int index_re_step_sharpness; /**< sharpness of tanh jump */
+  int index_re_first_f;       /**< xe slope for PCHIP in reio_flexknot */
 
   /* parameters used by reio_two_stages */
 

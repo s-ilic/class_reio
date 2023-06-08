@@ -1068,6 +1068,16 @@ int thermodynamics_indices(
     class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
     break;
 
+  case reio_flexknot:
+
+    ptrp->re_z_size=pth->reio_flexknot_num;
+
+    class_define_index(ptrp->index_re_first_z,_TRUE_,index_re,ptrp->re_z_size);
+    class_define_index(ptrp->index_re_first_xe,_TRUE_,index_re,ptrp->re_z_size);
+    class_define_index(ptrp->index_re_first_f,_TRUE_,index_re,ptrp->re_z_size);
+    class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
+    break;
+
   default:
     class_stop(pth->error_message,
                "value of reio_parametrization=%d unclear",pth->reio_parametrization);
@@ -1169,6 +1179,9 @@ int thermodynamics_set_parameters_reionization(
   int bin;
   int point;
   double xe_input,xe_actual,z_sup;
+  int ix,jx;
+  double current_z,current_dz,tmp_dz;
+  double h1,h2,d1,d2,w1,w2,f;
 
   /** - allocate the vector of parameters defining the function \f$ X_e(z) \f$ */
   class_alloc(preio->reionization_parameters,preio->re_size*sizeof(double),pth->error_message);
@@ -1479,6 +1492,157 @@ int thermodynamics_set_parameters_reionization(
       }
 
       preio->reionization_parameters[preio->index_re_first_xe+point] = xe_actual;
+    }
+
+    /* copy highest redshift in reio_start */
+    preio->reionization_parameters[preio->index_re_reio_start] = preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-1];
+
+    /* check it's not too big */
+    class_test(preio->reionization_parameters[preio->index_re_reio_start] > ppr->reionization_z_start_max,
+               pth->error_message,
+               "starting redshift for reionization = %e, reionization_z_start_max = %e, you must change the binning or increase reionization_z_start_max",
+               preio->reionization_parameters[preio->index_re_reio_start],
+               ppr->reionization_z_start_max);
+    break;
+
+    /** - (f) if reionization implemented with reio_flexknot scheme */
+  case reio_flexknot:
+
+    /* this parametrization requires at least one point (z,xe) */
+    class_test(pth->reio_flexknot_num<3,
+               pth->error_message,
+               "current implementation of reio_flexknot requires reio_flexknot_num to be at least 3, you passed %d", pth->reio_flexknot_num);
+
+    /* check the order of z input values when reio_flexknot_reorder_z==0 */
+    /* (also checks for duplicate values) */
+    if (pth->reio_flexknot_reorder_z == 0) {
+      for (point=1; point<pth->reio_flexknot_num; point++) {
+        class_test(pth->reio_flexknot_z[point-1]>=pth->reio_flexknot_z[point],
+                   pth->error_message,
+                   "values of reionization knots reio_flexknot_z expected to be passed in (strict) growing order, unlike: %e and %e at positions %d and %d",
+                   pth->reio_flexknot_z[point-1],
+                   pth->reio_flexknot_z[point],
+                   point-1, point);
+      }
+    }
+    /* check for duplicate values of z when reio_flexknot_reorder_z!=0 */
+    else {
+      for (ix=0; ix<preio->re_z_size-1; ix++) {
+        for (jx=ix+1; jx<preio->re_z_size; jx++) {
+          class_test(pth->reio_flexknot_z[ix]==pth->reio_flexknot_z[jx],
+                   pth->error_message,
+                   "duplicate z values found for reio_flexknot_z at positions %d and %d", ix, jx);
+        }
+      }
+    }
+
+    /* check that the z input values are bigger than 0 */
+    for (point=0; point<pth->reio_flexknot_num; point++) {
+      class_test(pth->reio_flexknot_z[point]<0,
+                 pth->error_message,
+                 "value of reionization knots reio_flexknot_z expected to be >0, unlike: %e at position %d",
+                 pth->reio_flexknot_z[point], point);
+    }
+
+    /* copy here the (z,xe) values passed in input. */
+    current_z = -1.;
+    for (ix=0; ix<preio->re_z_size; ix++) {
+
+      if (pth->reio_flexknot_reorder_z == 0) {
+        point = ix;
+      }
+      else {
+        current_dz = 1e100;
+        for (jx=0; jx<preio->re_z_size; jx++) {
+          tmp_dz = pth->reio_flexknot_z[jx] - current_z;
+          if ((tmp_dz > 0.) && (tmp_dz < current_dz)) {
+            current_dz = tmp_dz;
+            point = jx;
+          }
+        }
+        current_z = pth->reio_flexknot_z[point];
+      }
+
+      preio->reionization_parameters[preio->index_re_first_z+ix] = pth->reio_flexknot_z[point];
+
+      /* check that xe input can be interpreted by the code */
+      xe_input = pth->reio_flexknot_xe[point];
+      if ((xe_input==-1.) && (ix!=(preio->re_z_size-1))) {
+        class_stop(pth->error_message,
+                   "Your entry for reio_flexknot_xe[%d] is -1 but does not correspond to the highest redshift in reio_flexknot_z", point);
+      }
+      else if (xe_input==-1.) {
+        xe_actual = -1.;
+      }
+      else if ((xe_input<=1.) && (xe_input>=0.)) {
+        xe_actual = xe_input * (1. + pth->YHe/(_not4_*(1.-pth->YHe)));
+      }
+      else if ((xe_input<=2.) && (xe_input>1.)) {
+        xe_actual = 1. + xe_input * pth->YHe/(_not4_*(1.-pth->YHe));
+      }
+      //other number is nonsense
+      else {
+        class_stop(pth->error_message,
+                   "Your entry for reio_flexknot_xe[%d] is %e, this makes no sense (either -1 or between 0 and 2)",
+                   point,pth->reio_flexknot_xe[point]);
+      }
+      preio->reionization_parameters[preio->index_re_first_xe+ix] = xe_actual;
+    }
+
+    /* perform some checks on the final z and x_i arrays*/
+    // check that z[0]==0
+    class_test(preio->reionization_parameters[preio->index_re_first_z] != 0.,
+               pth->error_message,
+               "For reio_flexknot scheme, if reio_flexknot_reorder_z==0 (!=0) then the first (lowest) value of reio_flexknot_z should be zero, but you passed %e",
+               preio->reionization_parameters[preio->index_re_first_z]);
+    // check that x_i[-1]==-1
+    class_test(preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-1] != -1.,
+               pth->error_message,
+               "For reio_flexknot scheme, the value of reio_flexknot_xe for the highest reio_flexknot_z should always be -1, you passed %e",
+               preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-1]);
+
+    /* compute the slopes for PCHIP interpolation */
+    // Special case ix == 0
+    h1 = preio->reionization_parameters[preio->index_re_first_z+1] - preio->reionization_parameters[preio->index_re_first_z];
+    h2 = preio->reionization_parameters[preio->index_re_first_z+2] - preio->reionization_parameters[preio->index_re_first_z+1];
+    d1 = (preio->reionization_parameters[preio->index_re_first_xe+1]-preio->reionization_parameters[preio->index_re_first_xe]) / h1;
+    d2 = (preio->reionization_parameters[preio->index_re_first_xe+2]-preio->reionization_parameters[preio->index_re_first_xe+1]) / h2;
+    f = ((2. * h1 + h2) * d1 - h1 * d2) / (h1 + h2);
+    preio->reionization_parameters[preio->index_re_first_f] = f;
+    if (SIGNUM(f)!=SIGNUM(d1)) {
+      preio->reionization_parameters[preio->index_re_first_f] = 0.;
+    }
+    else if ((SIGNUM(d1)!=SIGNUM(d2)) && (fabs(f)>fabs(3.*d1))) {
+      preio->reionization_parameters[preio->index_re_first_f] = 3. * d1;
+    }
+    // Special case ix == nx-1
+    h1 = preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-2] - preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-3];
+    h2 = preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-1] - preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-2];
+    d1 = (preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-2]-preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-3]) / h1;
+    d2 = (preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-1]-preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-2]) / h2;
+    f = ((2. * h2 + h1) * d2 - h2 * d1) / (h1 + h2);
+    preio->reionization_parameters[preio->index_re_first_f+preio->re_z_size-1] = f;
+    if (SIGNUM(f)!=SIGNUM(d2)) {
+      preio->reionization_parameters[preio->index_re_first_f+preio->re_z_size-1] = 0.;
+    }
+    else if ((SIGNUM(d1)!=SIGNUM(d2)) && (fabs(f)>fabs(3.*d2))) {
+      preio->reionization_parameters[preio->index_re_first_f+preio->re_z_size-1] = 3. * d2;
+    }
+    // All ix between 1 and nx-3
+    // (nx-2 and nx-1 require the last xe, unkown at that point)
+    for (ix=1; ix<preio->re_z_size-2; ix++) {
+      h1 = preio->reionization_parameters[preio->index_re_first_z+ix] - preio->reionization_parameters[preio->index_re_first_z+ix-1];
+      h2 = preio->reionization_parameters[preio->index_re_first_z+ix+1] - preio->reionization_parameters[preio->index_re_first_z+ix];
+      d1 = (preio->reionization_parameters[preio->index_re_first_xe+ix]-preio->reionization_parameters[preio->index_re_first_xe+ix-1]) / h1;
+      d2 = (preio->reionization_parameters[preio->index_re_first_xe+ix+1]-preio->reionization_parameters[preio->index_re_first_xe+ix]) / h2;
+      if (SIGNUM(d1)!=SIGNUM(d2)) {
+        preio->reionization_parameters[preio->index_re_first_f+ix] = 0.;
+      }
+      else {
+        w1 = 2. * h2 + h1;
+        w2 = h2 + 2. * h1;
+        preio->reionization_parameters[preio->index_re_first_f+ix] = (w1 + w2) / (w1 / d1 + w2 / d2);
+      }
     }
 
     /* copy highest redshift in reio_start */
@@ -1845,6 +2009,10 @@ int thermodynamics_output_summary(
     break;
 
   case reio_inter:
+    printf(" -> interpolated reionization history gives optical depth = %f\n",pth->tau_reio);
+    break;
+
+  case reio_flexknot:
     printf(" -> interpolated reionization history gives optical depth = %f\n",pth->tau_reio);
     break;
 
@@ -4147,6 +4315,10 @@ int thermodynamics_reionization_function(
   double center,before, after,width,one_jump;
   double z_min, z_max;
 
+  int ix;
+  double h0,t,t2,t3,h00,h10,h01,h11;
+  double h1,h2,d1,d2,w1,w2,f;
+
   switch (pth->reio_parametrization) {
 
     /** - no reionization means nothing to be added to xe_before */
@@ -4336,6 +4508,84 @@ int thermodynamics_reionization_function(
                  pth->error_message,
                  "Interpolation gives negative ionization fraction\n",
                  argument,
+                 preio->reionization_parameters[preio->index_re_first_xe+i],
+                 preio->reionization_parameters[preio->index_re_first_xe+i+1]);
+    }
+    break;
+
+    /** - implementation of reio_flexknot */
+  case reio_flexknot:
+
+    /** - --> case z > z_reio_start */
+    if (z > preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-1]) {
+      *x = preio->reionization_parameters[preio->index_re_xe_before];
+    }
+    else{
+      i=0;
+      while (preio->reionization_parameters[preio->index_re_first_z+i+1] < z) i++;
+
+      z_min = preio->reionization_parameters[preio->index_re_first_z+i];
+      z_max = preio->reionization_parameters[preio->index_re_first_z+i+1];
+
+      /* fix the final xe to xe_before*/
+      preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-1] = preio->reionization_parameters[preio->index_re_xe_before];
+
+      /* fix the PCHIP slopes that involve the final xe*/
+      h1 = preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-2] - preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-3];
+      h2 = preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-1] - preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-2];
+      d1 = (preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-2]-preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-3]) / h1;
+      d2 = (preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-1]-preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-2]) / h2;
+      // ix == nx-1
+      f = ((2. * h2 + h1) * d2 - h2 * d1) / (h1 + h2);
+      preio->reionization_parameters[preio->index_re_first_f+preio->re_z_size-1] = f;
+      if (SIGNUM(f)!=SIGNUM(d2)) {
+        preio->reionization_parameters[preio->index_re_first_f+preio->re_z_size-1] = 0.;
+      }
+      else if ((SIGNUM(d1)!=SIGNUM(d2)) && (fabs(f)>fabs(3.*d2))) {
+        preio->reionization_parameters[preio->index_re_first_f+preio->re_z_size-1] = 3. * d2;
+      }
+      // ix == nx-2
+      if (SIGNUM(d1)!=SIGNUM(d2)) {
+        preio->reionization_parameters[preio->index_re_first_f+preio->re_z_size-2] = 0.;
+      }
+      else {
+        w1 = 2. * h2 + h1;
+        w2 = h2 + 2. * h1;
+        preio->reionization_parameters[preio->index_re_first_f+preio->re_z_size-2] = (w1 + w2) / (w1 / d1 + w2 / d2);
+      }
+
+      for (ix=0; ix<preio->re_z_size; ix++) {
+        printf("z=%20.15e, xe=%20.15e, f=%20.15e\n",preio->reionization_parameters[preio->index_re_first_z+ix],preio->reionization_parameters[preio->index_re_first_xe+ix],preio->reionization_parameters[preio->index_re_first_f+ix]);
+      }
+
+      class_test(z<z_min,
+                 pth->error_message,
+                 "z out of range for reionization interpolation");
+
+      class_test(z>z_max,
+                 pth->error_message,
+                 "z out of range for reionization interpolation");
+
+      h0 = preio->reionization_parameters[preio->index_re_first_z+i+1] - preio->reionization_parameters[preio->index_re_first_z+i];
+      t = (z - preio->reionization_parameters[preio->index_re_first_z+i]) / h0;
+      t2 = t * t;
+      t3 = t * t * t;
+      h00 = 2.0 * t3 - 3.0 * t2 + 1.0;
+      h10 = t3 - 2.0 * t2 + t;
+      h01 = -2.0 * t3 + 3.0 * t2;
+      h11 = t3 - t2;
+
+      *x = h00 * preio->reionization_parameters[preio->index_re_first_xe+i] +
+           h10 * h0 * preio->reionization_parameters[preio->index_re_first_f+i] +
+           h01 * preio->reionization_parameters[preio->index_re_first_xe+i+1] +
+           h11 * h0 * preio->reionization_parameters[preio->index_re_first_f+i+1];
+
+      printf("current z=%20.15e, xe=%20.15e\n", z, *x);
+
+      class_test(*x<0.,
+                 pth->error_message,
+                 "Interpolation gives negative ionization fraction\n",
+                 z,
                  preio->reionization_parameters[preio->index_re_first_xe+i],
                  preio->reionization_parameters[preio->index_re_first_xe+i+1]);
     }

@@ -75,6 +75,7 @@ typedef char FileName[_FILENAMESIZE_];
 #define MAX(a,b) (((a)<(b)) ? (b) : (a) ) /**< the usual "max" function */
 #define SIGN(a) (((a)>0) ? 1. : -1. )
 #define NRSIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
+#define SIGNUM(a) ((a > 0) ? 1 : ((a < 0) ? -1 : 0))
 #define index_symmetric_matrix(i1,i2,N) (((i1)<=(i2)) ? ((i2)+N*(i1)-((i1)*((i1)+1))/2) : ((i1)+N*(i2)-((i2)*((i2)+1))/2)) /**< assigns an index from 0 to [N(N+1)/2-1] to the coefficients M_{i1,i2} of an N*N symmetric matrix; useful for converting a symmetric matrix to a vector, without losing or double-counting any information */
 
 /* @endcond */

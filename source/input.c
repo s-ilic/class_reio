@@ -2263,6 +2263,7 @@ int input_read_parameters_general(struct file_content * pfc,
   case reio_flexknot:
     /* Read */
     class_read_int("reio_flexknot_num",pth->reio_flexknot_num);
+    class_read_int("reio_flexknot_reorder_z",pth->reio_flexknot_reorder_z);
     class_read_list_of_doubles("reio_flexknot_z",pth->reio_flexknot_z,pth->reio_flexknot_num);
     class_read_list_of_doubles("reio_flexknot_xe",pth->reio_flexknot_xe,pth->reio_flexknot_num);
     break;
@@ -5719,6 +5720,7 @@ int input_default_params(struct background *pba,
   pth->helium_fullreio_delta_z = 3.;
   /** 8.f) 'reio_flexknot' case */
   pth->reio_flexknot_num = 0;
+  pth->reio_flexknot_reorder_z = 0;
   pth->reio_flexknot_z = NULL;
   pth->reio_flexknot_xe = NULL;
 
