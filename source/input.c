@@ -2182,7 +2182,7 @@ int input_read_parameters_general(struct file_content * pfc,
     }
     else{
       class_stop(errmsg,
-                 "You specified 'reio_parametrization' as '%s'. It has to be one of {'reio_none','reio_camb','reio_bins_tanh','reio_half_tanh','reio_many_tanh','reio_inter'}.",string1);
+                 "You specified 'reio_parametrization' as '%s'. It has to be one of {'reio_none','reio_camb','reio_bins_tanh','reio_half_tanh','reio_many_tanh','reio_inter','reio_two_stages','reio_flexknot'}.",string1);
     }
   }
 
@@ -2250,19 +2250,9 @@ int input_read_parameters_general(struct file_content * pfc,
     /** 8.e) reionization parameters if reio_parametrization=reio_two_stages */
   case reio_two_stages:
     /* Read */
-    class_read_double("reio_xe_smoothing",pth->reio_xe_smoothing);
-    class_read_double("reio_z_end",pth->reio_z_end);
-    class_read_double("reio_z_mid",pth->reio_z_mid);
-    class_read_double("reio_z_begin",pth->reio_z_begin);
-    class_read_double("reio_f_xe_mid",pth->reio_f_xe_mid);
-    class_read_int("reio_lowz_type",pth->reio_lowz_type);
-    class_read_int("reio_highz_type",pth->reio_highz_type);
-    class_read_double("reio_lowz_B",pth->reio_lowz_B);
-    class_read_double("reio_lowz_C",pth->reio_lowz_C);
-    class_read_double("reio_lowz_E",pth->reio_lowz_E);
-    class_read_double("reio_highz_B",pth->reio_highz_B);
-    class_read_double("reio_highz_C",pth->reio_highz_C);
-    class_read_double("reio_highz_E",pth->reio_highz_E);
+    class_read_double("reio_two_stages_zend",pth->reio_two_stages_zend);
+    class_read_double("reio_two_stages_zpiv",pth->reio_two_stages_zpiv);
+    class_read_double("reio_two_stages_zbeg",pth->reio_two_stages_zbeg);
     class_read_double("helium_fullreio_z_start",pth->helium_fullreio_z_start);
     class_read_double("helium_fullreio_delta_z",pth->helium_fullreio_delta_z);
     break;
@@ -5714,19 +5704,9 @@ int input_default_params(struct background *pba,
   pth->reio_inter_z = NULL;
   pth->reio_inter_xe = NULL;
   /** 8.e) 'reio_two_stages' case */
-  pth->reio_xe_smoothing = 0.;
-  pth->reio_z_end = 6.;
-  pth->reio_z_mid = 10.;
-  pth->reio_z_begin = 14.;
-  pth->reio_f_xe_mid = 0.5;
-  pth->reio_lowz_type = 1;
-  pth->reio_highz_type = 1;
-  pth->reio_lowz_B = 1.;
-  pth->reio_lowz_C = 1.;
-  pth->reio_lowz_E = 1.;
-  pth->reio_highz_B = -1.;
-  pth->reio_highz_C = 1.;
-  pth->reio_highz_E = 1.;
+  pth->reio_two_stages_zend = 6.;
+  pth->reio_two_stages_zpiv = 8.;
+  pth->reio_two_stages_zbeg = 14.;
   pth->helium_fullreio_z_start = 5.;
   pth->helium_fullreio_delta_z = 3.;
   /** 8.f) 'reio_flexknot' case */

@@ -1068,6 +1068,13 @@ int thermodynamics_indices(
     class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
     break;
 
+  case reio_two_stages:
+
+    break;
+
+    class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
+    class_define_index(ptrp->index_re_last_xe,_TRUE_,index_re,1);
+
   case reio_flexknot:
 
     ptrp->re_z_size=pth->reio_flexknot_num;
@@ -1515,7 +1522,30 @@ int thermodynamics_set_parameters_reionization(
                ppr->reionization_z_start_max);
     break;
 
-    /** - (f) if reionization implemented with reio_flexknot scheme */
+    /** - (f) if reionization implemented with reio_two_stages scheme */
+  case reio_two_stages:
+
+    /* initialize last xe to -1*/
+    preio->reionization_parameters[preio->index_re_last_xe] = -1.;
+
+    class_test((pth->reio_two_stages_zend>pth->reio_two_stages_zpiv)
+               ||(pth->reio_two_stages_zpiv>pth->reio_two_stages_zbeg),
+               pth->error_message,
+               "reio_two_stages requires zend<=zpiv<=zbeg");
+
+    /* copy highest redshift in reio_start */
+    preio->reionization_parameters[preio->index_re_reio_start] = pth->reio_two_stages_zbeg;
+
+    /* check it's not too big */
+    class_test(preio->reionization_parameters[preio->index_re_reio_start] > ppr->reionization_z_start_max,
+               pth->error_message,
+               "starting redshift for reionization = %e, reionization_z_start_max = %e, you must change the binning or increase reionization_z_start_max",
+               preio->reionization_parameters[preio->index_re_reio_start],
+               ppr->reionization_z_start_max);
+
+    break;
+
+    /** - (g) if reionization implemented with reio_flexknot scheme */
   case reio_flexknot:
 
     /* initialize last xe to -1*/
@@ -2035,8 +2065,12 @@ int thermodynamics_output_summary(
     printf(" -> interpolated reionization history gives optical depth = %f\n",pth->tau_reio);
     break;
 
+  case reio_two_stages:
+    printf(" -> two-staged reionization history gives optical depth = %f\n",pth->tau_reio);
+    break;
+
   case reio_flexknot:
-    printf(" -> interpolated reionization history gives optical depth = %f\n",pth->tau_reio);
+    printf(" -> flexknot reionization history gives optical depth = %f\n",pth->tau_reio);
     break;
 
   default:
@@ -4667,6 +4701,24 @@ int thermodynamics_reionization_function(
                  argument,
                  preio->reionization_parameters[preio->index_re_first_xe+i],
                  preio->reionization_parameters[preio->index_re_first_xe+i+1]);
+    }
+    break;
+
+    /** - implementation of reio_two_stages */
+  case reio_two_stages:
+
+    /** - --> case z > z_reio_start */
+    if (z > preio->reionization_parameters[preio->index_re_reio_start]) {
+      *x = preio->reionization_parameters[preio->index_re_xe_before];
+    }
+    else{
+
+      if (preio->reionization_parameters[preio->index_re_last_xe] == -1.) {
+        preio->reionization_parameters[preio->index_re_last_xe] = preio->reionization_parameters[preio->index_re_xe_before];
+      }
+
+      *x = 0.;
+
     }
     break;
 

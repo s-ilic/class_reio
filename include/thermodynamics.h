@@ -145,31 +145,11 @@ struct thermodynamics
 
   /** parameters for reio_two_stages (ADD COMMENTS) */
 
-  double reio_xe_smoothing;
+  double reio_two_stages_zend;
 
-  double reio_z_end;
+  double reio_two_stages_zpiv;
 
-  double reio_z_mid;
-
-  double reio_z_begin;
-
-  double reio_f_xe_mid;
-
-  int reio_lowz_type;
-
-  int reio_highz_type;
-
-  double reio_lowz_B;
-
-  double reio_lowz_C;
-
-  double reio_lowz_E;
-
-  double reio_highz_B;
-
-  double reio_highz_C;
-
-  double reio_highz_E;
+  double reio_two_stages_zbeg;
 
   double helium_fullreio_z_start;
 
@@ -500,24 +480,6 @@ struct thermo_reionization_parameters{
   int index_re_last_xe;        /**< actual last fixed value of xe before reio  */
 
   /* parameters used by reio_two_stages */
-
-  int index_reio_z_before;
-  int index_reio_dxedz_before;
-  int index_reio_xe_smoothing;
-  int index_reio_z_end;
-  int index_reio_z_mid;
-  int index_reio_z_begin;
-  int index_reio_f_xe_mid;
-  int index_reio_lowz_type;
-  int index_reio_highz_type;
-  int index_reio_lowz_B;
-  int index_reio_lowz_C;
-  int index_reio_lowz_E;
-  int index_reio_highz_B;
-  int index_reio_highz_C;
-  int index_reio_highz_E;
-  int index_helium_fullreio_z_start;
-  int index_helium_fullreio_delta_z;
 
   /* parameters used by all schemes */
 
