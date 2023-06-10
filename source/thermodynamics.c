@@ -1191,6 +1191,15 @@ int thermodynamics_set_parameters_reionization(
              pth->error_message,
              "stop to avoid division by zero. Reionization stepsize has to be larger than zero");
 
+  if (pth->reio_taus_num>0) {
+    for (ix=0; ix<pth->reio_taus_num; ix++) {
+       class_test(pth->reio_taus_zmin[ix] >=  pth->reio_taus_zmax[ix],
+                  pth->error_message,
+                  "all reio_taus_zmin need to be strictly smaller that their corresponding reio_taus_zmax; you provided %e and %e at position %d",
+                  pth->reio_taus_zmin[ix], pth->reio_taus_zmax[ix], ix);
+    }
+  }
+
   switch (pth->reio_parametrization) {
 
     /** - (a) no reionization */
@@ -1852,6 +1861,16 @@ int thermodynamics_solve(
 
     pth->tau_reio=ptw->reionization_optical_depth;
 
+  }
+
+  /** - Compute list of optical depth with arbitrary redshift bounds */
+  if (pth->reio_taus_num > 0) {
+    class_call(thermodynamics_reionization_get_taus(ppr,
+                                                   pba,
+                                                   pth,
+                                                   ptw),
+               pth->error_message,
+               pth->error_message);
   }
 
   /** - free quantities allocated at the beginning of the routine */
@@ -3295,6 +3314,140 @@ int thermodynamics_reionization_get_tau(
              pth->error_message);
 
   ptw->reionization_optical_depth *= -1; // tau and z go in reverse order, so we must flip the sign
+
+  return _SUCCESS_;
+}
+
+/**
+ * Get multiple optical depths of reionization
+ *
+ * @param ppr        Input: pointer to precision structure
+ * @param pba        Input: pointer to background structure
+ * @param pth        Input: pointer to the thermodynamics structure
+ * @param ptw        Input: pointer to thermodynamics workspace
+ * @return the error status
+ */
+
+int thermodynamics_reionization_get_taus(
+                                        struct precision * ppr,
+                                        struct background * pba,
+                                        struct thermodynamics * pth,
+                                        struct thermo_workspace * ptw
+                                        ) {
+
+  /** Define local variables */
+  int index_z_lo[pth->reio_taus_num];
+  int index_z_hi[pth->reio_taus_num];
+  int highest_index_z=0;
+  int i,j,nx;
+  double h1,h2,y0,y1,y2,d1,d2,w1,w2,t;
+  double x0,x1,f0,f1;
+  double xx;
+  double * f;
+  double * g;
+
+  /** Find the index of the z array corresponding to the taus redshift bounds */
+  for (i=0; i<pth->reio_taus_num; i++) {
+    index_z_lo[i] = 0;
+    index_z_hi[i] = pth->tt_size-1;
+    for (j=0; j<pth->tt_size; j++) {
+      if (pth->z_table[j] <= pth->reio_taus_zmin[i]) {
+        index_z_lo[i] = j;
+      }
+      if ((pth->z_table[j] >= pth->reio_taus_zmax[i]) && (index_z_hi[i] == pth->tt_size-1)) {
+        index_z_hi[i] = j;
+      }
+    }
+    if (index_z_hi[i] > highest_index_z) {
+      highest_index_z = index_z_hi[i];
+    }
+  }
+
+  /** Compute PCHIP slopes for dkappa up to pth->tau_table[highest_index_z]   */
+  /** WARNING : pth->tau_table is in decreasing order !!!                     */
+  /**           hence all formulas use pth->tau_table[0]-pth->tau_table as x  */
+  nx = highest_index_z + 1;
+  f = malloc(nx * sizeof(double));
+  // Special case i == 0
+  h1 = pth->tau_table[0] - pth->tau_table[1];
+  h2 = pth->tau_table[1] - pth->tau_table[2];
+  y0 = pth->thermodynamics_table[pth->index_th_dkappa];
+  y1 = pth->thermodynamics_table[1*pth->th_size+pth->index_th_dkappa];
+  y2 = pth->thermodynamics_table[2*pth->th_size+pth->index_th_dkappa];
+  d1 = (y1-y0) / h1;
+  d2 = (y2-y1) / h2;
+  t = ((2. * h1 + h2) * d1 - h1 * d2) / (h1 + h2);
+  f[0] = t;
+  if (SIGNUM(t)!=SIGNUM(d1)) {
+    f[0] = 0.;
+  }
+  else if ((SIGNUM(d1)!=SIGNUM(d2)) && (fabs(t)>fabs(3.*d1))) {
+    f[0] = 3. * d1;
+  }
+  // All other i
+  for (i=1; i < nx; i++) {
+    h1 = pth->tau_table[i-1] - pth->tau_table[i];
+    h2 = pth->tau_table[i] - pth->tau_table[i+1];
+    y0 = pth->thermodynamics_table[(i-1)*pth->th_size+pth->index_th_dkappa];
+    y1 = pth->thermodynamics_table[i*pth->th_size+pth->index_th_dkappa];
+    y2 = pth->thermodynamics_table[(i+1)*pth->th_size+pth->index_th_dkappa];
+    d1 = (y1-y0) / h1;
+    d2 = (y2-y1) / h2;
+    if (SIGNUM(d1)!=SIGNUM(d2)) {
+      f[i] = 0.;
+    }
+    else {
+      w1 = 2. * h2 + h1;
+      w2 = h2 + 2. * h1;
+      f[i] = (w1 + w2) / (w1 / d1 + w2 / d2);
+    }
+  }
+
+  /** Compute integral of PCHIP for each time interval */
+  g = malloc(nx * sizeof(double));
+  g[0] = 0.;
+  for (i=1; i < nx; i++) {
+    x0 = pth->tau_table[0] - pth->tau_table[i-1];
+    x1 = pth->tau_table[0] - pth->tau_table[i];
+    f0 = f[i-1];
+    f1 = f[i];
+    y0 = pth->thermodynamics_table[(i-1)*pth->th_size+pth->index_th_dkappa];
+    y1 = pth->thermodynamics_table[i*pth->th_size+pth->index_th_dkappa];
+    g[i] = (x0 - x1) * ((f0 - f1) * (x0 - x1) - 6 * (y0 + y1)) / 12.;
+  }
+
+  /** Compute the taus */
+  for (i=0; i<pth->reio_taus_num; i++) {
+    pth->reio_taus[i] = 0.;
+    // Add the intervals fully inside the two z bounds
+    for (j=(index_z_lo[i]+2); j<index_z_hi[i]; j++) {
+      pth->reio_taus[i] += g[j];
+    }
+    // Add the bit at the beginning
+    x0 = pth->tau_table[0] - pth->tau_table[index_z_lo[i]];
+    x1 = pth->tau_table[0] - pth->tau_table[index_z_lo[i]+1];
+    class_call(background_tau_of_z(pba,pth->reio_taus_zmin[i],&(xx)),
+               pba->error_message,
+               pth->error_message);
+    xx = pth->tau_table[0] - xx;
+    pth->reio_taus[i] += ((x1 - xx)*(-(f1*(x0 - x1)*(x1 - xx)*
+            (6*x0*x0 + x1*x1 + 2*x1*xx + 3*xx*xx - 4*x0*(x1 + 2*xx))) -
+            pow(x1 - xx,2)*(f0*(x0 - x1)*(4*x0 - x1 - 3*xx) + 6*(-2*x0 + x1 + xx)*y0) -
+            6*(-2*x0*x0*x0 + 6*x0*x0*x1 + x1*x1*x1 + x1*x1*xx + x1*xx*xx - xx*xx*xx + 2*x0*(-2*x1*x1 - 2*x1*xx + xx*xx))*y1))/(12.*pow(x0 - x1,3));
+    // Add the bit at the end
+    x0 = pth->tau_table[0] - pth->tau_table[index_z_hi[i]-1];
+    x1 = pth->tau_table[0] - pth->tau_table[index_z_hi[i]];
+    class_call(background_tau_of_z(pba,pth->reio_taus_zmax[i],&(xx)),
+               pba->error_message,
+               pth->error_message);
+    xx = pth->tau_table[0] - xx;
+    pth->reio_taus[i] += -1./12.*(f1*(x0 - x1)*pow(x0 - xx,3)*(x0 - 4*x1 + 3*xx) -
+             f0*(x0 - x1)*pow(x0 - xx,2)*(x0*x0 + 6*x1*x1 - 8*x1*xx + 3*xx*xx + 2*x0*(-2*x1 + xx)) + 6*(2*x0*pow(x0 - x1,3) - 2*(x0 - x1)*pow(x0 - xx,3) + pow(x0 - xx,4) - 2*pow(x0 - x1,3)*xx)*y0 + 6*pow(x0 - xx,3)*(x0 - 2*x1 + xx)*y1)/pow(x0 - x1,3);
+  }
+
+  /** Free up arrays */
+  free(f);
+  free(g);
 
   return _SUCCESS_;
 }

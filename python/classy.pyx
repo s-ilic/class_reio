@@ -1378,6 +1378,9 @@ cdef class Class:
     def tau_reio(self):
         return self.th.tau_reio
 
+    def taus_reio(self):
+        return self.th.reio_taus
+
     def Omega_m(self):
         return self.ba.Omega0_m
 

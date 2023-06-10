@@ -10,6 +10,8 @@
 #include "wrap_recfast.h"
 #include "injection.h"
 
+#define _MAX_TAUS_OUTPUT_ 100
+
 /**
  * List of possible recombination algorithms.
  */
@@ -93,6 +95,15 @@ struct thermodynamics
   /** parameters for interpolation */
 
   double reio_interp_type; /**< type of special interpolation at low z (0==linear, 0!=PCHIP) */
+
+  /** parameters for additional optical depth calculations (ADD COMMENTS) */
+  int reio_taus_num;
+
+  double * reio_taus_zmin;
+
+  double * reio_taus_zmax;
+
+  double reio_taus[_MAX_TAUS_OUTPUT_];
 
   /** parameters for reio_camb */
 
@@ -673,6 +684,11 @@ extern "C" {
                              ErrorMsg error_message);
 
   int thermodynamics_reionization_get_tau(struct precision * ppr,
+                                          struct background * pba,
+                                          struct thermodynamics * pth,
+                                          struct thermo_workspace * ptw);
+
+  int thermodynamics_reionization_get_taus(struct precision * ppr,
                                           struct background * pba,
                                           struct thermodynamics * pth,
                                           struct thermo_workspace * ptw);

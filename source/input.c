@@ -2135,11 +2135,19 @@ int input_read_parameters_general(struct file_content * pfc,
 
   /** 8) Reionization parametrization */
 
+    /* select interpolation type (==0 standard spline, !=0 PCHIP interpolation)*/
     class_call(parser_read_double(pfc,"reio_interp_type",&param1,&flag1,errmsg),
                errmsg,
                errmsg);
     if (flag1 == _TRUE_){
       pth->reio_interp_type=param1;
+    }
+
+    /* whether to compute additional taus*/
+    class_read_int("reio_taus_num",pth->reio_taus_num);
+    if (pth->reio_taus_num>0){
+      class_read_list_of_doubles("reio_taus_zmin",pth->reio_taus_zmin,pth->reio_taus_num);
+      class_read_list_of_doubles("reio_taus_zmax",pth->reio_taus_zmax,pth->reio_taus_num);
     }
 
   /* Read */
@@ -5678,6 +5686,9 @@ int input_default_params(struct background *pba,
 
   /** 8) Parametrization of reionization */
   pth->reio_interp_type=0.;
+  pth->reio_taus_num=0;
+  pth->reio_taus_zmin=NULL;
+  pth->reio_taus_zmax=NULL;
   pth->reio_parametrization=reio_camb;
   /** 8.a) 'reio_camb' or 'reio_half_tanh' case */
   pth->reio_z_or_tau=reio_z;

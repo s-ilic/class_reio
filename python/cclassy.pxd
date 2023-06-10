@@ -11,6 +11,7 @@ DEF _MAX_NUMBER_OF_K_FILES_ = 30
 DEF _MAXTITLESTRINGLENGTH_ = 8000
 DEF _FILENAMESIZE_ = 256
 DEF _LINE_LENGTH_MAX_ = 1024
+DEF _MAX_TAUS_OUTPUT_ = 100
 
 cdef extern from "class.h":
 
@@ -116,6 +117,7 @@ cdef extern from "class.h":
         int index_th_xe
         int index_th_Tb
         double tau_reio
+        double reio_taus[_MAX_TAUS_OUTPUT_]
         double z_reio
         double z_rec
         double tau_rec
