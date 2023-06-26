@@ -2174,15 +2174,15 @@ int input_read_parameters_general(struct file_content * pfc,
     else if (strcmp(string1,"reio_inter") == 0){
       pth->reio_parametrization = reio_inter;
     }
-    else if (strcmp(string1,"reio_two_stages") == 0){
-      pth->reio_parametrization = reio_two_stages;
+    else if (strcmp(string1,"reio_asymm") == 0){
+      pth->reio_parametrization = reio_asymm;
     }
     else if (strcmp(string1,"reio_flexknot") == 0){
       pth->reio_parametrization = reio_flexknot;
     }
     else{
       class_stop(errmsg,
-                 "You specified 'reio_parametrization' as '%s'. It has to be one of {'reio_none','reio_camb','reio_bins_tanh','reio_half_tanh','reio_many_tanh','reio_inter','reio_two_stages','reio_flexknot'}.",string1);
+                 "You specified 'reio_parametrization' as '%s'. It has to be one of {'reio_none','reio_camb','reio_bins_tanh','reio_half_tanh','reio_many_tanh','reio_inter','reio_asymm','reio_flexknot'}.",string1);
     }
   }
 
@@ -2247,14 +2247,14 @@ int input_read_parameters_general(struct file_content * pfc,
     class_read_list_of_doubles("reio_inter_xe",pth->reio_inter_xe,pth->reio_inter_num);
     break;
 
-    /** 8.e) reionization parameters if reio_parametrization=reio_two_stages */
-  case reio_two_stages:
+    /** 8.e) reionization parameters if reio_parametrization=reio_asymm */
+  case reio_asymm:
     /* Read */
-    class_read_double("reio_two_stages_zend",pth->reio_two_stages_zend);
-    class_read_double("reio_two_stages_zpiv",pth->reio_two_stages_zpiv);
-    class_read_double("reio_two_stages_zbeg",pth->reio_two_stages_zbeg);
-    class_read_double("helium_fullreio_z_start",pth->helium_fullreio_z_start);
-    class_read_double("helium_fullreio_delta_z",pth->helium_fullreio_delta_z);
+    class_read_double("reio_asymm_zend",pth->reio_asymm_zend);
+    class_read_double("reio_asymm_zbeg",pth->reio_asymm_zbeg);
+    class_read_double("reio_asymm_alpha",pth->reio_asymm_alpha);
+    class_read_double("helium_fullreio_redshift",pth->helium_fullreio_redshift);
+    class_read_double("helium_fullreio_width",pth->helium_fullreio_width);
     break;
 
     /** 8.f) reionization parameters if reio_parametrization=reio_flexknot */
@@ -5703,12 +5703,10 @@ int input_default_params(struct background *pba,
   pth->reio_inter_num = 0;
   pth->reio_inter_z = NULL;
   pth->reio_inter_xe = NULL;
-  /** 8.e) 'reio_two_stages' case */
-  pth->reio_two_stages_zend = 6.;
-  pth->reio_two_stages_zpiv = 8.;
-  pth->reio_two_stages_zbeg = 14.;
-  pth->helium_fullreio_z_start = 5.;
-  pth->helium_fullreio_delta_z = 3.;
+  /** 8.e) 'reio_asymm' case */
+  pth->reio_asymm_zend = 6.;
+  pth->reio_asymm_zbeg = 14.;
+  pth->reio_asymm_alpha = 2.;
   /** 8.f) 'reio_flexknot' case */
   pth->reio_flexknot_num = 0;
   pth->reio_flexknot_reorder_z = 0;

@@ -1068,12 +1068,14 @@ int thermodynamics_indices(
     class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
     break;
 
-  case reio_two_stages:
-
-    break;
+  case reio_asymm:
 
     class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
     class_define_index(ptrp->index_re_last_xe,_TRUE_,index_re,1);
+    class_define_index(ptrp->index_re_helium_fullreio_fraction,_TRUE_,index_re,1);
+    class_define_index(ptrp->index_re_helium_fullreio_redshift,_TRUE_,index_re,1);
+    class_define_index(ptrp->index_re_helium_fullreio_width,_TRUE_,index_re,1);
+    break;
 
   case reio_flexknot:
 
@@ -1522,19 +1524,26 @@ int thermodynamics_set_parameters_reionization(
                ppr->reionization_z_start_max);
     break;
 
-    /** - (f) if reionization implemented with reio_two_stages scheme */
-  case reio_two_stages:
+    /** - (f) if reionization implemented with reio_asymm scheme */
+  case reio_asymm:
 
     /* initialize last xe to -1*/
     preio->reionization_parameters[preio->index_re_last_xe] = -1.;
 
-    class_test((pth->reio_two_stages_zend>pth->reio_two_stages_zpiv)
-               ||(pth->reio_two_stages_zpiv>pth->reio_two_stages_zbeg),
+    class_test(pth->reio_asymm_zend > pth->reio_asymm_zbeg,
                pth->error_message,
-               "reio_two_stages requires zend<=zpiv<=zbeg");
+               "reio_asymm requires zend<=zbeg, you provided zend = %e and zbeg = %e", pth->reio_asymm_zend, pth->reio_asymm_zbeg);
+
+    preio->reionization_parameters[preio->index_re_helium_fullreio_fraction] = pth->YHe/(_not4_*(1.-pth->YHe));
+    preio->reionization_parameters[preio->index_re_helium_fullreio_redshift] = pth->helium_fullreio_redshift;
+    preio->reionization_parameters[preio->index_re_helium_fullreio_width] = pth->helium_fullreio_width;
+
+    class_test(preio->reionization_parameters[preio->index_re_helium_fullreio_width]==0,
+               pth->error_message,
+               "stop to avoid division by zero");
 
     /* copy highest redshift in reio_start */
-    preio->reionization_parameters[preio->index_re_reio_start] = pth->reio_two_stages_zbeg;
+    preio->reionization_parameters[preio->index_re_reio_start] = pth->reio_asymm_zbeg;
 
     /* check it's not too big */
     class_test(preio->reionization_parameters[preio->index_re_reio_start] > ppr->reionization_z_start_max,
@@ -1551,8 +1560,8 @@ int thermodynamics_set_parameters_reionization(
     /* initialize last xe to -1*/
     preio->reionization_parameters[preio->index_re_last_xe] = -1.;
 
-    /* this parametrization requires at least one point (z,xe) */
-    class_test(pth->reio_flexknot_num<3,
+    /* this parametrization requires at least two (z,xe) knot */
+    class_test(pth->reio_flexknot_num<2,
                pth->error_message,
                "current implementation of reio_flexknot requires reio_flexknot_num to be at least 3, you passed %d", pth->reio_flexknot_num);
 
@@ -2065,7 +2074,7 @@ int thermodynamics_output_summary(
     printf(" -> interpolated reionization history gives optical depth = %f\n",pth->tau_reio);
     break;
 
-  case reio_two_stages:
+  case reio_asymm:
     printf(" -> two-staged reionization history gives optical depth = %f\n",pth->tau_reio);
     break;
 
@@ -4704,8 +4713,8 @@ int thermodynamics_reionization_function(
     }
     break;
 
-    /** - implementation of reio_two_stages */
-  case reio_two_stages:
+    /** - implementation of reio_asymm */
+  case reio_asymm:
 
     /** - --> case z > z_reio_start */
     if (z > preio->reionization_parameters[preio->index_re_reio_start]) {
@@ -4716,8 +4725,21 @@ int thermodynamics_reionization_function(
       if (preio->reionization_parameters[preio->index_re_last_xe] == -1.) {
         preio->reionization_parameters[preio->index_re_last_xe] = preio->reionization_parameters[preio->index_re_xe_before];
       }
+      if (z > pth->reio_asymm_zend) {
+        *x = (1. + pth->YHe/(_not4_*(1.-pth->YHe)) - preio->reionization_parameters[preio->index_re_last_xe]) *
+            pow((pth->reio_asymm_zbeg-z)/(pth->reio_asymm_zbeg-pth->reio_asymm_zend),pth->reio_asymm_alpha)
+            + preio->reionization_parameters[preio->index_re_last_xe];
+      }
+      else {
+        *x = 1. + pth->YHe/(_not4_*(1.-pth->YHe));
+      }
 
-      *x = 0.;
+      /** - --> case z < z_reio_start: helium contribution (tanh of simpler argument) */
+      argument = (preio->reionization_parameters[preio->index_re_helium_fullreio_redshift] - z)
+        /preio->reionization_parameters[preio->index_re_helium_fullreio_width];
+
+      *x += preio->reionization_parameters[preio->index_re_helium_fullreio_fraction]
+        *(tanh(argument)+1.)/2.;
 
     }
     break;

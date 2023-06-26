@@ -32,7 +32,7 @@ enum reionization_parametrization {
                                    reio_half_tanh,  /**< half a tanh, instead of the full tanh */
                                    reio_many_tanh,  /**< similar to reio_camb but with more than one tanh */
                                    reio_inter,       /**< linear interpolation between specified points */
-                                   reio_two_stages,  /**< two-stage reionization  */
+                                   reio_asymm,  /**< two-stage reionization  */
                                    reio_flexknot  /**< flexknot reionization  */
 };
 
@@ -143,17 +143,13 @@ struct thermodynamics
 
   double * reio_inter_xe; /**< discrete \f$ X_e(z)\f$ values */
 
-  /** parameters for reio_two_stages (ADD COMMENTS) */
+  /** parameters for reio_asymm (ADD COMMENTS) */
 
-  double reio_two_stages_zend;
+  double reio_asymm_zend;
 
-  double reio_two_stages_zpiv;
+  double reio_asymm_zbeg;
 
-  double reio_two_stages_zbeg;
-
-  double helium_fullreio_z_start;
-
-  double helium_fullreio_delta_z;
+  double reio_asymm_alpha;
 
   /** parameters for reio_flexknot (ADD COMMENTS) */
 
@@ -479,7 +475,7 @@ struct thermo_reionization_parameters{
   int index_re_first_f;        /**< xe slope for PCHIP in reio_flexknot */
   int index_re_last_xe;        /**< actual last fixed value of xe before reio  */
 
-  /* parameters used by reio_two_stages */
+  /* parameters used by reio_asymm */
 
   /* parameters used by all schemes */
 
