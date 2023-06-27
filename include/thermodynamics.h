@@ -473,7 +473,6 @@ struct thermo_reionization_parameters{
   int index_re_first_xe;       /**< ionization fraction at redshift first_z (inferred from recombination code) */
   int index_re_step_sharpness; /**< sharpness of tanh jump */
   int index_re_first_f;        /**< xe slope for PCHIP in reio_flexknot */
-  int index_re_last_xe;        /**< actual last fixed value of xe before reio  */
 
   /* parameters used by reio_asymm */
 

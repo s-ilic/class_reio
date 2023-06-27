@@ -1071,7 +1071,6 @@ int thermodynamics_indices(
   case reio_asymm:
 
     class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
-    class_define_index(ptrp->index_re_last_xe,_TRUE_,index_re,1);
     class_define_index(ptrp->index_re_helium_fullreio_fraction,_TRUE_,index_re,1);
     class_define_index(ptrp->index_re_helium_fullreio_redshift,_TRUE_,index_re,1);
     class_define_index(ptrp->index_re_helium_fullreio_width,_TRUE_,index_re,1);
@@ -1085,7 +1084,6 @@ int thermodynamics_indices(
     class_define_index(ptrp->index_re_first_xe,_TRUE_,index_re,ptrp->re_z_size);
     class_define_index(ptrp->index_re_first_f,_TRUE_,index_re,ptrp->re_z_size);
     class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
-    class_define_index(ptrp->index_re_last_xe,_TRUE_,index_re,1);
     break;
 
   default:
@@ -1527,9 +1525,6 @@ int thermodynamics_set_parameters_reionization(
     /** - (f) if reionization implemented with reio_asymm scheme */
   case reio_asymm:
 
-    /* initialize last xe to -1*/
-    preio->reionization_parameters[preio->index_re_last_xe] = -1.;
-
     class_test(pth->reio_asymm_zend > pth->reio_asymm_zbeg,
                pth->error_message,
                "reio_asymm requires zend<=zbeg, you provided zend = %e and zbeg = %e", pth->reio_asymm_zend, pth->reio_asymm_zbeg);
@@ -1556,9 +1551,6 @@ int thermodynamics_set_parameters_reionization(
 
     /** - (g) if reionization implemented with reio_flexknot scheme */
   case reio_flexknot:
-
-    /* initialize last xe to -1*/
-    preio->reionization_parameters[preio->index_re_last_xe] = -1.;
 
     /* this parametrization requires at least two (z,xe) knot */
     class_test(pth->reio_flexknot_num<2,
@@ -4475,7 +4467,24 @@ int thermodynamics_ionization_fractions(
   if (current_ap == ptdw->index_ap_reio) {
 
     /* set x from the evolver (which is very low ~10^-4) as 'xe_before' */
-    ptw->ptrp->reionization_parameters[ptw->ptrp->index_re_xe_before] = x;
+    switch (pth->reio_parametrization)
+    {
+    case reio_asymm:
+      if (z > pth->reio_asymm_zbeg) {
+        ptw->ptrp->reionization_parameters[ptw->ptrp->index_re_xe_before] = x;
+      }
+      break;
+
+    case reio_flexknot:
+      if (z > ptw->ptrp->reionization_parameters[ptw->ptrp->index_re_first_z+ptw->ptrp->re_z_size-1]) {
+        ptw->ptrp->reionization_parameters[ptw->ptrp->index_re_xe_before] = x;
+      }
+      break;
+
+    default:
+      ptw->ptrp->reionization_parameters[ptw->ptrp->index_re_xe_before] = x;
+      break;
+    }
 
     /* compute x */
     class_call(thermodynamics_reionization_function(z,pth,ptw->ptrp,&x),
@@ -4722,13 +4731,10 @@ int thermodynamics_reionization_function(
     }
     else{
 
-      if (preio->reionization_parameters[preio->index_re_last_xe] == -1.) {
-        preio->reionization_parameters[preio->index_re_last_xe] = preio->reionization_parameters[preio->index_re_xe_before];
-      }
       if (z > pth->reio_asymm_zend) {
-        *x = (1. + pth->YHe/(_not4_*(1.-pth->YHe)) - preio->reionization_parameters[preio->index_re_last_xe]) *
+        *x = (1. + pth->YHe/(_not4_*(1.-pth->YHe)) - preio->reionization_parameters[preio->index_re_xe_before]) *
             pow((pth->reio_asymm_zbeg-z)/(pth->reio_asymm_zbeg-pth->reio_asymm_zend),pth->reio_asymm_alpha)
-            + preio->reionization_parameters[preio->index_re_last_xe];
+            + preio->reionization_parameters[preio->index_re_xe_before];
       }
       else {
         *x = 1. + pth->YHe/(_not4_*(1.-pth->YHe));
@@ -4753,10 +4759,6 @@ int thermodynamics_reionization_function(
     }
     else{
 
-      if (preio->reionization_parameters[preio->index_re_last_xe] == -1.) {
-        preio->reionization_parameters[preio->index_re_last_xe] = preio->reionization_parameters[preio->index_re_xe_before];
-      }
-
       i=0;
       while (preio->reionization_parameters[preio->index_re_first_z+i+1] < z) i++;
 
@@ -4764,7 +4766,7 @@ int thermodynamics_reionization_function(
       z_max = preio->reionization_parameters[preio->index_re_first_z+i+1];
 
       /* fix the final xe to xe_before*/
-      preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-1] = preio->reionization_parameters[preio->index_re_last_xe];
+      preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-1] = preio->reionization_parameters[preio->index_re_xe_before];
 
       /* fix the PCHIP slopes that involve the final xe*/
       h1 = preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-2] - preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-3];
