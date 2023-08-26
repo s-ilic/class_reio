@@ -2264,6 +2264,7 @@ int input_read_parameters_general(struct file_content * pfc,
     class_read_int("reio_flexknot_reorder_z",pth->reio_flexknot_reorder_z);
     class_read_list_of_doubles("reio_flexknot_z",pth->reio_flexknot_z,pth->reio_flexknot_num);
     class_read_list_of_doubles("reio_flexknot_xe",pth->reio_flexknot_xe,pth->reio_flexknot_num);
+    class_read_int("reio_flexknot_smooth_start",pth->reio_flexknot_smooth_start);
     break;
 
   default:
@@ -5712,6 +5713,7 @@ int input_default_params(struct background *pba,
   pth->reio_flexknot_reorder_z = 0;
   pth->reio_flexknot_z = NULL;
   pth->reio_flexknot_xe = NULL;
+  pth->reio_flexknot_smooth_start = 0;
 
 
   /** 9) Damping scale */

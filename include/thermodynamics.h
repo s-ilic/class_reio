@@ -161,6 +161,8 @@ struct thermodynamics
 
   double * reio_flexknot_xe;
 
+  int reio_flexknot_smooth_start;
+
   /** parameters for energy injection */
 
   short has_exotic_injection; /**< true if some exotic mechanism

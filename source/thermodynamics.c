@@ -4776,7 +4776,10 @@ int thermodynamics_reionization_function(
       // ix == nx-1
       f = ((2. * h2 + h1) * d2 - h2 * d1) / (h1 + h2);
       preio->reionization_parameters[preio->index_re_first_f+preio->re_z_size-1] = f;
-      if (SIGNUM(f)!=SIGNUM(d2)) {
+      if (pth->reio_flexknot_smooth_start != 0) {
+        preio->reionization_parameters[preio->index_re_first_f+preio->re_z_size-1] = 0.;
+      }
+      else if (SIGNUM(f)!=SIGNUM(d2)) {
         preio->reionization_parameters[preio->index_re_first_f+preio->re_z_size-1] = 0.;
       }
       else if ((SIGNUM(d1)!=SIGNUM(d2)) && (fabs(f)>fabs(3.*d2))) {
