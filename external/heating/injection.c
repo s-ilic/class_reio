@@ -164,6 +164,9 @@ int injection_indices(struct thermodynamics* pth){
   int index_dep,index_inj;
 
   /* Check energy injection */
+  if(pin->arb_inj_num_bins>0){
+    pin->has_arb_inj = _TRUE_;
+  }
   if(pin->DM_annihilation_efficiency!=0){
     pin->has_DM_ann = _TRUE_;
   }
@@ -179,6 +182,7 @@ int injection_indices(struct thermodynamics* pth){
 
   /** - Indices for injection table */
   index_inj = 0;
+  class_define_index(pin->index_inj_arb_inj , pin->has_arb_inj , index_inj, 1);
   class_define_index(pin->index_inj_DM_ann  , pin->has_DM_ann  , index_inj, 1);
   class_define_index(pin->index_inj_DM_dec  , pin->has_DM_dec  , index_inj, 1);
   class_define_index(pin->index_inj_PBH_eva , pin->has_PBH_eva , index_inj, 1);
@@ -403,6 +407,19 @@ int injection_energy_injection_at_z(struct injection* pin,
 
   else {
     /** - Exotic energy injection mechanisms */
+    /* Arbitrary injection */
+    if(pin->has_arb_inj == _TRUE_){
+      class_call(injection_rate_arb_inj(pin,
+                                         z,
+                                         &rate),
+                 pin->error_message,
+                 pin->error_message);
+      if(pin->to_store == _TRUE_){
+        pin->injection_table[pin->index_inj_arb_inj][pin->index_z_store] = rate;
+      }
+      dEdt += rate;
+    }
+
     /* DM annihilation */
     if(pin->has_DM_ann == _TRUE_){
       class_call(injection_rate_DM_annihilation(pin,
@@ -684,6 +701,38 @@ int injection_deposition_at_z(struct thermodynamics* pth,
 }
 
 
+/**
+ * Calculate arbitrary injection.
+ *
+ * @param pin            Input: pointer to injection structure
+ * @param z              Input: redshift
+ * @param energy_rate    Output: energy density injection rate
+ * @return the error status
+ */
+int injection_rate_arb_inj(struct injection * pin,
+                            double z,
+                            double * energy_rate){
+
+  int i;
+
+  /** - Calculate injection rates */
+  if (z > pin->arb_inj_z[pin->arb_inj_num_bins]) {
+    *energy_rate = 0.;
+  }
+  else if (z < pin->arb_inj_z[0]) {
+    *energy_rate = 0.;
+  }
+  else {
+    for(i = 0; i < pin->arb_inj_num_bins; i++) {
+      if (pin->arb_inj_z[i] < z) {
+        break;
+      }
+    }
+    *energy_rate = pin->arb_inj_dEdt[i];
+  }
+
+  return _SUCCESS_;
+}
 
 
 /**

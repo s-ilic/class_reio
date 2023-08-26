@@ -3379,9 +3379,29 @@ int input_read_parameters_injection(struct file_content * pfc,
 
   /** - Define local variables */
   struct injection* pin = &(pth->in);
-  int flag1;
+  int flag1, ix;
   char string1[_ARGUMENT_LENGTH_MAX_];
   string1[0]='\0';
+
+  /** 0) Arbitrary injection */
+  class_read_int("arb_inj_num_bins", pin->arb_inj_num_bins);
+  class_test(pin->arb_inj_num_bins<0,
+             errmsg,
+             "number of arbitrary injection bins cannot be negative");
+  if (pin->arb_inj_num_bins>0) {
+    pth->has_exotic_injection = _TRUE_;
+    class_read_list_of_doubles("arb_inj_z", pin->arb_inj_z, pin->arb_inj_num_bins+1);
+    class_read_list_of_doubles("arb_inj_dEdt", pin->arb_inj_dEdt, pin->arb_inj_num_bins);
+    for (ix = 0; ix < pin->arb_inj_num_bins; ix++)
+    {
+      class_test(pin->arb_inj_z[ix]>=pin->arb_inj_z[ix+1],
+                 errmsg,
+                 "arbitrary injection redshifts have to be strictly increasing");
+      class_test(pin->arb_inj_dEdt[ix]<0.,
+                 errmsg,
+                 "arbitrary injection has to be positive");
+    }
+  }
 
   /** 1) DM annihilation */
   /** 1.a) Annihilation efficiency */
@@ -5853,6 +5873,9 @@ int input_default_params(struct background *pba,
    * Deafult to input_read_parameters_heating
    */
   pth->has_exotic_injection = _FALSE_;
+
+  /** 0) Arbitrary injection */
+  pin->arb_inj_num_bins = 0;
 
   /** 1) DM annihilation */
   /** 1.a) Energy fraction absorbed by the gas */

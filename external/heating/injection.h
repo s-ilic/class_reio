@@ -17,6 +17,11 @@ struct injection{
 
   //@{
 
+  /* Arbitrary injection parameters */
+  int arb_inj_num_bins;
+  double * arb_inj_z;
+  double * arb_inj_dEdt;
+
   /* Exotic energy injection parameters */
   double DM_annihilation_efficiency;
   double DM_annihilation_cross_section;
@@ -126,6 +131,7 @@ struct injection{
   double** injection_table;
   int index_inj_cool;
   int index_inj_diss;
+  int index_inj_arb_inj;
   int index_inj_DM_ann;
   int index_inj_DM_dec;
   int index_inj_PBH_eva;
@@ -165,6 +171,7 @@ struct injection{
   /* Flags */
   int has_exotic_injection;
 
+  int has_arb_inj;
   int has_DM_ann;
   int has_DM_dec;
   int has_PBH_eva;
@@ -221,6 +228,10 @@ extern "C" {
                                 double z);
 
   /* injection functions */
+  int injection_rate_arb_inj(struct injection * phe,
+                             double z,
+                             double * energy_rate);
+
   int injection_rate_DM_annihilation(struct injection * phe,
                                      double z,
                                      double * energy_rate);
