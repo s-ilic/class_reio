@@ -719,16 +719,16 @@ int injection_rate_arb_inj(struct injection * pin,
   if (z > pin->arb_inj_z[pin->arb_inj_num_bins]) {
     *energy_rate = 0.;
   }
-  else if (z < pin->arb_inj_z[0]) {
+  else if (z <= pin->arb_inj_z[0]) {
     *energy_rate = 0.;
   }
   else {
-    for(i = 0; i < pin->arb_inj_num_bins; i++) {
-      if (pin->arb_inj_z[i] < z) {
+    for(i = 1; i <= pin->arb_inj_num_bins; i++) {
+      if (z <= pin->arb_inj_z[i]) {
         break;
       }
     }
-    *energy_rate = pin->arb_inj_dEdt[i];
+    *energy_rate = pin->arb_inj_dEdt[i-1];
   }
 
   return _SUCCESS_;
