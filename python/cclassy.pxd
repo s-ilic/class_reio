@@ -131,6 +131,12 @@ cdef extern from "class.h":
         double ra_star
         double da_star
         double rd_star
+        double z_star_MC
+        double tau_star_MC
+        double rs_star_MC
+        double ds_star_MC
+        double ra_star_MC
+        double da_star_MC
         double z_d
         double tau_d
         double ds_d

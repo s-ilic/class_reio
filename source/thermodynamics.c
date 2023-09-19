@@ -4113,6 +4113,8 @@ int thermodynamics_calculate_recombination_quantities(
 
   /** Define local variables */
   double g_max;
+  double omega_b,omega_m,tmp_tau,tmp_rs;
+;
 
   int index_tau;
   int index_tau_max;
@@ -4224,6 +4226,36 @@ int thermodynamics_calculate_recombination_quantities(
   pth->ds_star=pth->rs_star/(1.+pth->z_star);
   pth->da_star=pvecback[pba->index_bg_ang_distance];
   pth->ra_star=pth->da_star*(1.+pth->z_star);
+
+  class_call(background_tau_of_z(pba,1e8-1,&(tmp_tau)),
+             pba->error_message,
+             pth->error_message);
+
+  class_call(background_at_tau(pba,tmp_tau, long_info, inter_normal, &last_index_back, pvecback),
+             pba->error_message,
+             pth->error_message);
+
+  tmp_rs = pvecback[pba->index_bg_rs_approx];
+
+  // From Hu & Sugiyama (same approximation as CosmoMC's theta)
+  omega_b = pba->Omega0_b*pba->h*pba->h;
+  omega_m = pba->Omega0_m*pba->h*pba->h;
+  pth->z_star_MC = 1048. * (1+0.00124*pow(omega_b, -0.738))*(1+
+              (0.0783*pow(omega_b,-0.238)/(1+39.5*pow(omega_b,0.763))) *
+              pow(omega_m,0.560/(1+21.1*pow(omega_b,1.81))));
+
+  class_call(background_tau_of_z(pba,pth->z_star_MC,&(pth->tau_star_MC)),
+             pba->error_message,
+             pth->error_message);
+
+  class_call(background_at_tau(pba,pth->tau_star_MC, long_info, inter_normal, &last_index_back, pvecback),
+             pba->error_message,
+             pth->error_message);
+
+  pth->rs_star_MC=pvecback[pba->index_bg_rs_approx]-tmp_rs;
+  pth->ds_star_MC=pth->rs_star_MC/(1.+pth->z_star_MC);
+  pth->da_star_MC=pvecback[pba->index_bg_ang_distance];
+  pth->ra_star_MC=pth->da_star_MC*(1.+pth->z_star_MC);
 
   if (pth->compute_damping_scale == _TRUE_) {
 

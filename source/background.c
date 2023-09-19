@@ -620,6 +620,9 @@ int background_functions(
     /** - comoving sound horizon */
     pvecback[pba->index_bg_rs] = pvecback_B[pba->index_bi_rs];
 
+    /** - approximate comoving sound horizon */
+    pvecback[pba->index_bg_rs_approx] = pvecback_B[pba->index_bi_rs_approx];
+
     /** - growth factor */
     pvecback[pba->index_bg_D] = pvecback_B[pba->index_bi_D];
 
@@ -1125,6 +1128,9 @@ int background_indices(
   /* -> conformal sound horizon */
   class_define_index(pba->index_bg_rs,_TRUE_,index_bg,1);
 
+  /* -> conformal approximate sound horizon */
+  class_define_index(pba->index_bg_rs_approx,_TRUE_,index_bg,1);
+
   /* -> density growth factor in dust universe */
   class_define_index(pba->index_bg_D,_TRUE_,index_bg,1);
 
@@ -1175,6 +1181,9 @@ int background_indices(
 
   /* -> sound horizon */
   class_define_index(pba->index_bi_rs,_TRUE_,index_bi,1);
+
+  /* -> approximate sound horizon */
+  class_define_index(pba->index_bi_rs_approx,_TRUE_,index_bi,1);
 
   /* -> Second order equation for growth factor */
   class_define_index(pba->index_bi_D,_TRUE_,index_bi,1);
@@ -2319,6 +2328,9 @@ int background_initial_conditions(
   /** - compute initial sound horizon, assuming \f$ c_s=1/\sqrt{3} \f$ initially */
   pvecback_integration[pba->index_bi_rs] = pvecback_integration[pba->index_bi_tau]/sqrt(3.);
 
+  /** - compute initial approximate sound horizon */
+  pvecback_integration[pba->index_bi_rs_approx] = pvecback_integration[pba->index_bi_tau]/sqrt(3.);
+
   /** - set initial value of D and D' in RD. D and D' need only be set up to an overall constant, since they will later be re-normalized. From Ma&Bertschinger, one can derive D ~ (ktau)^2 at early times, from which one finds D'/D = 2 aH (assuming aH=1/tau during RD) */
   pvecback_integration[pba->index_bi_D] = 1.;
   pvecback_integration[pba->index_bi_D_prime] = 2.*a*pvecback[pba->index_bg_H];
@@ -2509,6 +2521,7 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_ang_distance],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_lum_distance],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rs],_TRUE_,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_rs_approx],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_g],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_b],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_cdm],pba->has_cdm,storeidx);
@@ -2622,6 +2635,9 @@ int background_derivs(
 
   /** - calculate detivative of sound horizon \f$ drs/dloga = drs/dtau * dtau/dloga = c_s/aH \f$*/
   dy[pba->index_bi_rs] = 1./a/H/sqrt(3.*(1.+3.*pvecback[pba->index_bg_rho_b]/4./pvecback[pba->index_bg_rho_g]))*sqrt(1.-pba->K*y[pba->index_bi_rs]*y[pba->index_bi_rs]); // TBC: curvature correction
+
+  /** - calculate detivative of sound horizon */
+  dy[pba->index_bi_rs_approx] = 1./a/H/sqrt(3.*(1.+30000.*a*pba->Omega0_b*pba->h*pba->h));
 
   /** - solve second order growth equation \f$ [D''(\tau)=-aHD'(\tau)+3/2 a^2 \rho_M D(\tau) \f$
       written as \f$ dD/dloga = D' / (aH) \f$ and \f$ dD'/dloga = -D' + (3/2) (a/H) \rho_M D \f$ */

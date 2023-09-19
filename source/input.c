@@ -524,6 +524,7 @@ int input_shooting(struct file_content * pfc,
   char * const target_namestrings[] = {"100*theta_s",
                                        "100*theta_star",
                                        "100*theta_star_noreio",
+                                       "100*theta_MC",
                                        "Omega_dcdmdr",
                                        "omega_dcdmdr",
                                        "Omega_scf",
@@ -534,6 +535,7 @@ int input_shooting(struct file_content * pfc,
   char * const unknown_namestrings[] = {"h",                        /* unknown param for target '100*theta_s' */
                                         "h",                        /* unknown param for target '100*theta_star' */
                                         "h",                        /* unknown param for target '100*theta_star_noreio' */
+                                        "h",                        /* unknown param for target '100*theta_MC' */
                                         "Omega_ini_dcdm",           /* unknown param for target 'Omega_dcdmd' */
                                         "Omega_ini_dcdm",           /* unknown param for target 'omega_dcdmdr' */
                                         "scf_shooting_parameter",   /* unknown param for target 'Omega_scf' */
@@ -546,6 +548,7 @@ int input_shooting(struct file_content * pfc,
   enum computation_stage target_cs[] = {cs_thermodynamics, /* computation stage for target '100*theta_s' */
                                         cs_thermodynamics, /* computation stage for target '100*theta_star' */
                                         cs_thermodynamics, /* computation stage for target '100*theta_star_noreio' */
+                                        cs_thermodynamics, /* computation stage for target '100*theta_MC' */
                                         cs_background,     /* computation stage for target 'Omega_dcdmdr' */
                                         cs_background,     /* computation stage for target 'omega_dcdmdr' */
                                         cs_background,     /* computation stage for target 'Omega_scf' */
@@ -1202,6 +1205,13 @@ int input_get_guess(double *xguess,
       ba.h = xguess[index_guess];
       ba.H0 = ba.h *  1.e5 / _c_;
       break;
+    case theta_MC:
+      xguess[index_guess] = 3.54*pow(pfzw->target_value[index_guess],2)-5.455*pfzw->target_value[index_guess]+2.548;
+      dxdy[index_guess] = (7.08*pfzw->target_value[index_guess]-5.455);
+      /** Update pb to reflect guess */
+      ba.h = xguess[index_guess];
+      ba.H0 = ba.h *  1.e5 / _c_;
+      break;
     case Omega_dcdmdr:
       Omega_M = ba.Omega0_cdm+ba.Omega0_idm+ba.Omega0_dcdmdr+ba.Omega0_b;
       /* *
@@ -1456,6 +1466,9 @@ int input_try_unknown_parameters(double * unknown_parameter,
       break;
     case theta_star_noreio:
       output[i] = 100.*th.rs_star/th.ra_star-pfzw->target_value[i];
+      break;
+    case theta_MC:
+      output[i] = 100.*th.rs_star_MC/th.ra_star_MC-pfzw->target_value[i];
       break;
     case Omega_dcdmdr:
       rho_dcdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm];

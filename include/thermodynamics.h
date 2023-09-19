@@ -301,6 +301,12 @@ struct thermodynamics
   double ra_star;  /**< conformal angular diameter distance to z_star */
   double da_star;  /**< physical angular diameter distance to z_star */
   double rd_star;  /**< comoving photon damping scale at z_star */
+  double z_star_MC;    /**< approximation of the redshift at which photon optical depth crosses one */
+  double tau_star_MC;  /**< confirmal time at z_star_MC */
+  double rs_star_MC;   /**< comoving sound horizon at z_star_MC */
+  double ds_star_MC;   /**< physical sound horizon at z_star_MC */
+  double ra_star_MC;   /**< conformal angular diameter distance to z_star_MC */
+  double da_star_MC;   /**< physical angular diameter distance to z_star_MC */
 
   double z_d;     /**< baryon drag redshift */
   double tau_d;   /**< baryon drag time */
