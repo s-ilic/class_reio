@@ -1054,7 +1054,7 @@ int thermodynamics_indices(
 
     class_define_index(ptrp->index_re_first_z,_TRUE_,index_re,ptrp->re_z_size);
     class_define_index(ptrp->index_re_first_xe,_TRUE_,index_re,ptrp->re_z_size);
-    class_define_index(ptrp->index_re_step_sharpness,_TRUE_,index_re,1);
+    class_define_index(ptrp->index_re_first_step_sharpness,_TRUE_,index_re,pth->many_tanh_num);
     class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
     break;
 
@@ -1376,7 +1376,16 @@ int thermodynamics_set_parameters_reionization(
                  "value of reionization bin centers z_i expected to be passed in growing order: %e, %e",
                  pth->many_tanh_z[bin-1],
                  pth->many_tanh_z[bin]);
+    }
 
+    for (bin=0; bin<pth->many_tanh_num; bin++) {
+      class_test(pth->many_tanh_width[bin]<=0,
+                 pth->error_message,
+                 "all many_tanh_width must be strictly positive, you passed many_tanh_width[%d]=%e",
+                 pth->many_tanh_width[bin]);
+
+      /* pass step sharpness parameter */
+      preio->reionization_parameters[preio->index_re_first_step_sharpness+bin] = pth->many_tanh_width[bin];
     }
 
     /* the code will not only copy here the "jump centers" passed in input. It will add an initial and final value for (z,xe).
@@ -1411,7 +1420,7 @@ int thermodynamics_set_parameters_reionization(
     /* find largest value of z in the array. We choose to define it as z_(i_max) + ppr->reionization_start_factor*step_sharpness. */
     preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-1] =
       preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-2]
-      +ppr->reionization_start_factor*pth->many_tanh_width;
+      +ppr->reionization_start_factor*pth->many_tanh_width[pth->many_tanh_num-1];
 
     /* copy this value in reio_start */
     preio->reionization_parameters[preio->index_re_reio_start] = preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-1];
@@ -1426,7 +1435,7 @@ int thermodynamics_set_parameters_reionization(
     /* find smallest value of z in the array. We choose to define it as z_0 - ppr->reionization_start_factor*step_sharpness, but at least zero. */
     preio->reionization_parameters[preio->index_re_first_z] =
       preio->reionization_parameters[preio->index_re_first_z+1]
-      -ppr->reionization_start_factor*pth->many_tanh_width;
+      -ppr->reionization_start_factor*pth->many_tanh_width[0];
 
     if (preio->reionization_parameters[preio->index_re_first_z] < 0) {
       preio->reionization_parameters[preio->index_re_first_z] = 0.;
@@ -1444,13 +1453,6 @@ int thermodynamics_set_parameters_reionization(
     /* if we want to model hydrogen + two helium reionization */
     //preio->reionization_parameters[preio->index_re_first_xe] = 1. + 2.*pth->YHe/(_not4_*(1.-pth->YHe));
 
-    /* pass step sharpness parameter */
-    class_test(pth->many_tanh_width<=0,
-               pth->error_message,
-               "many_tanh_width must be strictly positive, you passed %e",
-               pth->many_tanh_width);
-
-    preio->reionization_parameters[preio->index_re_step_sharpness] = pth->many_tanh_width;
     break;
 
     /** - (e) if reionization implemented with reio_inter scheme */
@@ -4699,7 +4701,7 @@ int thermodynamics_reionization_function(
         before = preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-1-jump]
           -preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-jump];
         after = 0.;
-        width = preio->reionization_parameters[preio->index_re_step_sharpness];
+        width = preio->reionization_parameters[preio->index_re_first_step_sharpness+pth->many_tanh_num-jump];
 
         one_jump = before + (after-before)*(tanh((z-center)/width)+1.)/2.;
 

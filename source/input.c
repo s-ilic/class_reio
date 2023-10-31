@@ -2282,7 +2282,7 @@ int input_read_parameters_general(struct file_content * pfc,
     class_read_int("many_tanh_num",pth->many_tanh_num);
     class_read_list_of_doubles("many_tanh_z",pth->many_tanh_z,pth->many_tanh_num);
     class_read_list_of_doubles("many_tanh_xe",pth->many_tanh_xe,pth->many_tanh_num);
-    class_read_double("many_tanh_width",pth->many_tanh_width);
+    class_read_list_of_doubles("many_tanh_width",pth->many_tanh_width,pth->many_tanh_num);
     break;
 
     /** 8.d) reionization parameters if reio_parametrization=reio_many_tanh */
@@ -5765,7 +5765,7 @@ int input_default_params(struct background *pba,
   pth->many_tanh_num=0;
   pth->many_tanh_z=NULL;
   pth->many_tanh_xe=NULL;
-  pth->many_tanh_width = 0.5;
+  pth->many_tanh_width=NULL;
   /** 8.d) 'reio_inter' case */
   pth->reio_inter_num = 0;
   pth->reio_inter_z = NULL;

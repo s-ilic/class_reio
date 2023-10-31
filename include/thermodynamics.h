@@ -133,7 +133,7 @@ struct thermodynamics
 
   double * many_tanh_xe; /**< imposed \f$ X_e(z)\f$ value at the end of each jump (ie at later times)*/
 
-  double many_tanh_width; /**< sharpness of tanh() steps */
+  double * many_tanh_width; /**< sharpness of tanh() steps */
 
   /** parameters for reio_inter */
 
@@ -480,6 +480,7 @@ struct thermo_reionization_parameters{
   int index_re_first_z;        /**< redshift at which we start to impose reionization function */
   int index_re_first_xe;       /**< ionization fraction at redshift first_z (inferred from recombination code) */
   int index_re_step_sharpness; /**< sharpness of tanh jump */
+  int index_re_first_step_sharpness; /**< sharpness of many tanh jump */
   int index_re_first_f;        /**< xe slope for PCHIP in reio_flexknot */
 
   /* parameters used by reio_asymm */
