@@ -97,6 +97,8 @@ struct thermodynamics
   double reio_interp_type; /**< type of special interpolation at low z (0==linear, 0!=PCHIP) */
 
   /** parameters for additional optical depth calculations (ADD COMMENTS) */
+  double reio_zmax_calc_tau;
+
   int reio_taus_num;
 
   double * reio_taus_zmin;
@@ -162,6 +164,10 @@ struct thermodynamics
   double * reio_flexknot_xe;
 
   int reio_flexknot_smooth_start;
+
+//   double reio_flexknot_tau;
+
+//   double reio_flexknot_rescale;
 
   /** parameters for energy injection */
 

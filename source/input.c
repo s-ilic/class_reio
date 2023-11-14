@@ -2181,6 +2181,8 @@ int input_read_parameters_general(struct file_content * pfc,
 
   /** 8) Reionization parametrization */
 
+    class_read_double("reio_zmax_calc_tau",pth->reio_zmax_calc_tau);
+
     /* select interpolation type (==0 standard spline, !=0 PCHIP interpolation)*/
     class_call(parser_read_double(pfc,"reio_interp_type",&param1,&flag1,errmsg),
                errmsg,
@@ -2311,6 +2313,8 @@ int input_read_parameters_general(struct file_content * pfc,
     class_read_list_of_doubles("reio_flexknot_z",pth->reio_flexknot_z,pth->reio_flexknot_num);
     class_read_list_of_doubles("reio_flexknot_xe",pth->reio_flexknot_xe,pth->reio_flexknot_num);
     class_read_int("reio_flexknot_smooth_start",pth->reio_flexknot_smooth_start);
+    // class_read_int("reio_flexknot_tau",pth->reio_flexknot_tau);
+    // class_read_int("reio_flexknot_rescale",pth->reio_flexknot_rescale);
     break;
 
   default:
@@ -5751,6 +5755,7 @@ int input_default_params(struct background *pba,
   pth->reio_z_or_tau=reio_z;
   pth->z_reio=7.6711;
   pth->tau_reio=0.05430842;
+  pth->reio_zmax_calc_tau=-1.;
   pth->reionization_exponent=1.5;
   pth->reionization_width=0.5;
   pth->helium_fullreio_redshift=3.5;
