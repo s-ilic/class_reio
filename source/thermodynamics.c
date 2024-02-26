@@ -1612,10 +1612,10 @@ int thermodynamics_set_parameters_reionization(
       preio->reionization_parameters[preio->index_re_first_z+ix] = pth->reio_flexknot_z[point];
 
       /* check that xe input can be interpreted by the code */
-      xe_input = pth->reio_flexknot_xe[point];
+      xe_input = pth->reio_flexknot_xe[ix];
       if ((xe_input==-1.) && (ix!=(preio->re_z_size-1))) {
         class_stop(pth->error_message,
-                   "Your entry for reio_flexknot_xe[%d] is -1 but does not correspond to the highest redshift in reio_flexknot_z", point);
+                   "Your entry for reio_flexknot_xe[%d] is -1 but does not correspond to the highest redshift in reio_flexknot_z", ix);
       }
       else if (xe_input==-1.) {
         xe_actual = -1.;
@@ -1630,7 +1630,7 @@ int thermodynamics_set_parameters_reionization(
       else {
         class_stop(pth->error_message,
                    "Your entry for reio_flexknot_xe[%d] is %e, this makes no sense (either -1 or between 0 and 2)",
-                   point,pth->reio_flexknot_xe[point]);
+                   ix,xe_input);
       }
       preio->reionization_parameters[preio->index_re_first_xe+ix] = xe_actual;
     }
