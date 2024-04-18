@@ -1089,11 +1089,12 @@ int thermodynamics_indices(
     /* case where x_e(z) is a combination of vectors from PCA then linearly interpolated (as reio_inter) */
   case reio_pca:
 
-    ptrp->re_z_size = pth->reio_z_num;
+    ptrp->re_z_size = 500; /* MAX nb of redshifts */
 
     class_define_index(ptrp->index_re_first_z,_TRUE_,index_re,ptrp->re_z_size);
     class_define_index(ptrp->index_re_first_xe,_TRUE_,index_re,ptrp->re_z_size);
     class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
+    break;
 
   default:
     class_stop(pth->error_message,
@@ -1717,33 +1718,46 @@ int thermodynamics_set_parameters_reionization(
   case reio_pca:
 
     /* read the file with Sa vectors */
+//     printf( "%s\n", ppr->PCA_file);
     class_open(fA,ppr->PCA_file, "r",pth->error_message);
 
     /* go through each line */
     point = 0;
     while (fgets(line,_LINE_LENGTH_MAX_-1,fA) != NULL) {
-      char* token = strtok(line, " \t\n");
+      
+      char* token = strtok(line, " ,");
       /* first column: redshift */
       preio->reionization_parameters[preio->index_re_first_z+point] = atof(token);
-      token = strtok(NULL, " \t\n");
+      token = strtok(NULL, " \t");
 
       /* second column: xe_fid */
       preio->reionization_parameters[preio->index_re_first_xe+point] = atof(token);
-      token = strtok(NULL, " \t\n");
+      token = strtok(NULL, " \t");
 
       /* N columns: one per mode */
-      for( int col=0; col<=pth->reio_pca_num; col++)
-      {
-	preio->reionization_parameters[preio->index_re_first_xe+point] += pth->reio_pca_amp[col]*atof(token);
-	token = strtok(NULL, " \t\n");
+      for( int col=0; col<pth->reio_pca_num; col++) {
+ 	preio->reionization_parameters[preio->index_re_first_xe+point] += pth->reio_pca_amp[col]*atof(token);
+  	token = strtok(NULL, " \t");
       }
+
+//       printf( "%d %f %f\n", point,
+//  	      preio->reionization_parameters[preio->index_re_first_z+point],
+//  	      preio->reionization_parameters[preio->index_re_first_xe+point]);
       point++;
+      
     }
     
     fclose(fA);
 
+    /* rescale for the number of z */
+    preio->re_z_size = point;
+
     /* copy highest redshift in reio_start */
     preio->reionization_parameters[preio->index_re_reio_start] = preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-1];
+
+    printf( "reio starts: z=%f, xe=%f\n",
+	    preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-1],
+	    preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-1]);
 
     /* check it's not too big */
     class_test(preio->reionization_parameters[preio->index_re_reio_start] > ppr->reionization_z_start_max,

@@ -172,7 +172,6 @@ struct thermodynamics
 
   /** parameters for reio_pca (ADD COMMENTS) */
 
-  int reio_z_num;
   int reio_pca_num;
 
   double *  reio_pca_amp;

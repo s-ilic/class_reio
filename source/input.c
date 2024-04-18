@@ -2228,9 +2228,12 @@ int input_read_parameters_general(struct file_content * pfc,
     else if (strcmp(string1,"reio_flexknot") == 0){
       pth->reio_parametrization = reio_flexknot;
     }
+    else if (strcmp(string1,"reio_pca") == 0){
+      pth->reio_parametrization = reio_pca;
+    }
     else{
       class_stop(errmsg,
-                 "You specified 'reio_parametrization' as '%s'. It has to be one of {'reio_none','reio_camb','reio_bins_tanh','reio_half_tanh','reio_many_tanh','reio_inter','reio_asymm','reio_flexknot'}.",string1);
+                 "You specified 'reio_parametrization' as '%s'. It has to be one of {'reio_none','reio_camb','reio_bins_tanh','reio_half_tanh','reio_many_tanh','reio_inter','reio_asymm','reio_flexknot','reio_pca'}.",string1);
     }
   }
 
@@ -2287,7 +2290,7 @@ int input_read_parameters_general(struct file_content * pfc,
     class_read_list_of_doubles("many_tanh_width",pth->many_tanh_width,pth->many_tanh_num);
     break;
 
-    /** 8.d) reionization parameters if reio_parametrization=reio_many_tanh */
+    /** 8.d) reionization parameters if reio_parametrization=reio_inter */
   case reio_inter:
     /* Read */
     class_read_int("reio_inter_num",pth->reio_inter_num);
@@ -2315,6 +2318,13 @@ int input_read_parameters_general(struct file_content * pfc,
     class_read_int("reio_flexknot_smooth_start",pth->reio_flexknot_smooth_start);
     // class_read_int("reio_flexknot_tau",pth->reio_flexknot_tau);
     // class_read_int("reio_flexknot_rescale",pth->reio_flexknot_rescale);
+    break;
+
+    /** 8.g) reionization parameters if reio_parametrization=reio_pca */
+  case reio_pca:
+    /* Read */
+    class_read_int("reio_pca_num",pth->reio_pca_num);
+    class_read_list_of_doubles("reio_pca_amp",pth->reio_pca_amp,pth->reio_pca_num);
     break;
 
   default:
@@ -5785,6 +5795,9 @@ int input_default_params(struct background *pba,
   pth->reio_flexknot_z = NULL;
   pth->reio_flexknot_xe = NULL;
   pth->reio_flexknot_smooth_start = 0;
+  /** 8.g) 'reio_pca' case */
+  pth->reio_pca_num = 0;
+  pth->reio_pca_amp = NULL;
 
 
   /** 9) Damping scale */
