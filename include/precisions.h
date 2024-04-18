@@ -234,6 +234,8 @@ class_precision_parameter(reionization_sampling,double,1.5e-2)  /**< Minimum sam
 class_precision_parameter(reionization_optical_depth_tol,double,1.0e-4) /**< Relative tolerance on finding the user-given optical depth of reionization given a certain redshift of reionization */
 class_precision_parameter(reionization_start_factor,double,8.0) /**< Searching optical depth corresponding to the redshift is started from an initial offset beyond z_reionization_start, multiplied by reionization_width */
 
+class_string_parameter(PCA_file,"/external/reio/PCA_reio.dat","PCA file")
+
 /*
  * Heating parameters
  */

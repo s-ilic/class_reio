@@ -31,9 +31,10 @@ enum reionization_parametrization {
                                    reio_bins_tanh,  /**< binned reionization history with tanh inteprolation between bins */
                                    reio_half_tanh,  /**< half a tanh, instead of the full tanh */
                                    reio_many_tanh,  /**< similar to reio_camb but with more than one tanh */
-                                   reio_inter,       /**< linear interpolation between specified points */
-                                   reio_asymm,  /**< two-stage reionization  */
-                                   reio_flexknot  /**< flexknot reionization  */
+                                   reio_inter,      /**< linear interpolation between specified points */
+                                   reio_asymm,      /**< two-stage reionization  */
+                                   reio_flexknot,   /**< flexknot reionization  */
+                                   reio_pca         /**< PCA plus linear interpolation */
 };
 
 /**
@@ -168,6 +169,15 @@ struct thermodynamics
 //   double reio_flexknot_tau;
 
 //   double reio_flexknot_rescale;
+
+  /** parameters for reio_pca (ADD COMMENTS) */
+
+  int reio_z_num;
+  int reio_pca_num;
+
+  double *  reio_pca_amp;
+  
+
 
   /** parameters for energy injection */
 

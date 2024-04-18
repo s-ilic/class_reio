@@ -1086,6 +1086,15 @@ int thermodynamics_indices(
     class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
     break;
 
+    /* case where x_e(z) is a combination of vectors from PCA then linearly interpolated (as reio_inter) */
+  case reio_pca:
+
+    ptrp->re_z_size = pth->reio_z_num;
+
+    class_define_index(ptrp->index_re_first_z,_TRUE_,index_re,ptrp->re_z_size);
+    class_define_index(ptrp->index_re_first_xe,_TRUE_,index_re,ptrp->re_z_size);
+    class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
+
   default:
     class_stop(pth->error_message,
                "value of reio_parametrization=%d unclear",pth->reio_parametrization);
@@ -1190,6 +1199,8 @@ int thermodynamics_set_parameters_reionization(
   int ix,jx;
   double current_z,current_dz,tmp_dz;
   double h1,h2,d1,d2,w1,w2,f;
+  FILE * fA;
+  char line[_LINE_LENGTH_MAX_];
 
   /** - allocate the vector of parameters defining the function \f$ X_e(z) \f$ */
   class_alloc(preio->reionization_parameters,preio->re_size*sizeof(double),pth->error_message);
@@ -1702,6 +1713,46 @@ int thermodynamics_set_parameters_reionization(
                ppr->reionization_z_start_max);
     break;
 
+    /** - (h) if reionization implemented with reio_pca scheme */
+  case reio_pca:
+
+    /* read the file with Sa vectors */
+    class_open(fA,ppr->PCA_file, "r",pth->error_message);
+
+    /* go through each line */
+    point = 0;
+    while (fgets(line,_LINE_LENGTH_MAX_-1,fA) != NULL) {
+      char* token = strtok(line, " \t\n");
+      /* first column: redshift */
+      preio->reionization_parameters[preio->index_re_first_z+point] = atof(token);
+      token = strtok(NULL, " \t\n");
+
+      /* second column: xe_fid */
+      preio->reionization_parameters[preio->index_re_first_xe+point] = atof(token);
+      token = strtok(NULL, " \t\n");
+
+      /* N columns: one per mode */
+      for( int col=0; col<=pth->reio_pca_num; col++)
+      {
+	preio->reionization_parameters[preio->index_re_first_xe+point] += pth->reio_pca_amp[col]*atof(token);
+	token = strtok(NULL, " \t\n");
+      }
+      point++;
+    }
+    
+    fclose(fA);
+
+    /* copy highest redshift in reio_start */
+    preio->reionization_parameters[preio->index_re_reio_start] = preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-1];
+
+    /* check it's not too big */
+    class_test(preio->reionization_parameters[preio->index_re_reio_start] > ppr->reionization_z_start_max,
+               pth->error_message,
+               "starting redshift for reionization = %e, reionization_z_start_max = %e, you must change the binning or increase reionization_z_start_max",
+               preio->reionization_parameters[preio->index_re_reio_start],
+               ppr->reionization_z_start_max);
+    break;
+
   default:
     class_stop(pth->error_message,
                "value of reio_parametrization=%d unclear",pth->reio_parametrization);
@@ -2074,6 +2125,10 @@ int thermodynamics_output_summary(
 
   case reio_flexknot:
     printf(" -> flexknot reionization history gives optical depth = %f\n",pth->tau_reio);
+    break;
+
+  case reio_pca:
+    printf(" -> PCA reionization history gives optical depth = %f\n",pth->tau_reio);
     break;
 
   default:
@@ -2506,7 +2561,7 @@ int thermodynamics_reionization_evolve_with_tau(
     ptw->ptrp->reionization_parameters[ptw->ptrp->index_re_reio_start] = z_sup;
     break;
   default:
-    class_stop(pth->error_message,"Should not be there: tau_reio acan be an input only for reio_camb and reio_half_tanh");
+    class_stop(pth->error_message,"Should not be there: tau_reio can be an input only for reio_camb and reio_half_tanh");
     break;
   }
 
@@ -4872,6 +4927,48 @@ int thermodynamics_reionization_function(
     }
     break;
 
+    /** - implementation of reio_pca (copy reio_inter) */
+  case reio_pca:
+
+    /** - --> case z > z_reio_start */
+    if (z > preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-1]) {
+      *x = preio->reionization_parameters[preio->index_re_xe_before];
+    }
+    else{
+      i=0;
+      while (preio->reionization_parameters[preio->index_re_first_z+i+1] < z) i++;
+
+      z_min = preio->reionization_parameters[preio->index_re_first_z+i];
+      z_max = preio->reionization_parameters[preio->index_re_first_z+i+1];
+
+      /* fix the final xe to xe_before*/
+      preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-1] = preio->reionization_parameters[preio->index_re_xe_before];
+
+      class_test(z<z_min,
+                 pth->error_message,
+                 "z out of range for reionization interpolation");
+
+      class_test(z>z_max,
+                 pth->error_message,
+                 "z out of range for reionization interpolation");
+
+      argument =(z-preio->reionization_parameters[preio->index_re_first_z+i])
+        /(preio->reionization_parameters[preio->index_re_first_z+i+1]
+          -preio->reionization_parameters[preio->index_re_first_z+i]);
+
+      *x = preio->reionization_parameters[preio->index_re_first_xe+i]
+        + argument*(preio->reionization_parameters[preio->index_re_first_xe+i+1]
+                    -preio->reionization_parameters[preio->index_re_first_xe+i]);
+
+//       class_test(*x<0.,
+//                  pth->error_message,
+//                  "Interpolation gives negative ionization fraction\n",
+//                  argument,
+//                  preio->reionization_parameters[preio->index_re_first_xe+i],
+//                  preio->reionization_parameters[preio->index_re_first_xe+i+1]);
+    }
+    break;
+    
   default:
     class_stop(pth->error_message,
                "value of reio_parametrization=%d unclear",pth->reio_parametrization);
