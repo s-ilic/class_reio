@@ -1740,11 +1740,13 @@ int thermodynamics_set_parameters_reionization(
   	token = strtok(NULL, " \t");
       }
 
+      //WARNING xe>0 !
+//       preio->reionization_parameters[preio->index_re_first_xe+point] = fabs(preio->reionization_parameters[preio->index_re_first_xe+point]);
+      
 //       printf( "%d %f %f\n", point,
 //  	      preio->reionization_parameters[preio->index_re_first_z+point],
 //  	      preio->reionization_parameters[preio->index_re_first_xe+point]);
       point++;
-      
     }
     
     fclose(fA);

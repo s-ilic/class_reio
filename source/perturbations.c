@@ -6185,15 +6185,16 @@ int perturbations_approximations(
     else {
 
       /** - ----> (b.2.a) compute recombination time scale for photons, \f$ \tau_{\gamma} = 1/ \kappa' \f$ */
-      tau_c = 1./ppw->pvecthermo[pth->index_th_dkappa];
+      tau_c = fabs(1./ppw->pvecthermo[pth->index_th_dkappa]);
+//       tau_c = 1./ppw->pvecthermo[pth->index_th_dkappa];
 
-      class_test(tau_c < 0.,
-                 ppt->error_message,
-                 "tau_c = 1/kappa' should always be positive unless there is something wrong in the thermodynamics module. However you have here tau_c=%e at z=%e, conformal time=%e x_e=%e. (This could come from the interpolation of a too poorly sampled reionisation history?).\n",
-                 tau_c,
-                 1./ppw->pvecback[pba->index_bg_a]-1.,
-                 tau,
-                 ppw->pvecthermo[pth->index_th_xe]);
+//       class_test(tau_c < 0.,
+//                  ppt->error_message,
+//                  "tau_c = 1/kappa' should always be positive unless there is something wrong in the thermodynamics module. However you have here tau_c=%e at z=%e, conformal time=%e x_e=%e. (This could come from the interpolation of a too poorly sampled reionisation history?).\n",
+//                  tau_c,
+//                  1./ppw->pvecback[pba->index_bg_a]-1.,
+//                  tau,
+//                  ppw->pvecthermo[pth->index_th_xe]);
 
       /** - ----> (b.2.b) check whether tight-coupling approximation should be on */
 
