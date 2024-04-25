@@ -1718,7 +1718,6 @@ int thermodynamics_set_parameters_reionization(
   case reio_pca:
 
     /* read the file with Sa vectors */
-//     printf( "%s\n", ppr->PCA_file);
     class_open(fA,ppr->PCA_file, "r",pth->error_message);
 
     /* go through each line */
@@ -1740,26 +1739,26 @@ int thermodynamics_set_parameters_reionization(
   	token = strtok(NULL, " \t");
       }
 
-      //WARNING xe>0 !
+      //WARNING xe>0 otherwise segfault !
 //       preio->reionization_parameters[preio->index_re_first_xe+point] = fabs(preio->reionization_parameters[preio->index_re_first_xe+point]);
       
-//       printf( "%d %f %f\n", point,
-//  	      preio->reionization_parameters[preio->index_re_first_z+point],
-//  	      preio->reionization_parameters[preio->index_re_first_xe+point]);
       point++;
     }
-    
     fclose(fA);
 
+    /* force last redshift to xe=0 */
+    double fHe = pth->YHe/(_not4_*(1.-pth->YHe));
+    preio->reionization_parameters[preio->index_re_first_xe+point-1] = 0.;
+
     /* rescale for the number of z */
+    class_test( preio->re_z_size < point,
+		pth->error_message,
+		"Max redshifts for reionization history is %d (you asked for %d)",
+		preio->re_z_size, point);
     preio->re_z_size = point;
 
     /* copy highest redshift in reio_start */
     preio->reionization_parameters[preio->index_re_reio_start] = preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-1];
-
-    printf( "reio starts: z=%f, xe=%f\n",
-	    preio->reionization_parameters[preio->index_re_first_z+preio->re_z_size-1],
-	    preio->reionization_parameters[preio->index_re_first_xe+preio->re_z_size-1]);
 
     /* check it's not too big */
     class_test(preio->reionization_parameters[preio->index_re_reio_start] > ppr->reionization_z_start_max,
@@ -1767,7 +1766,35 @@ int thermodynamics_set_parameters_reionization(
                "starting redshift for reionization = %e, reionization_z_start_max = %e, you must change the binning or increase reionization_z_start_max",
                preio->reionization_parameters[preio->index_re_reio_start],
                ppr->reionization_z_start_max);
+
+    /* smooth xe between z=5 and zmax with Gaussian in ln(1+z) */
+    double sum, sigma = 0.05;
+    double *pvecxe;
+    class_alloc(pvecxe,preio->re_z_size*sizeof(double),pba->error_message);
+    point = 0;
+    while( preio->reionization_parameters[preio->index_re_first_z+point] < 5) {
+      pvecxe[point] = preio->reionization_parameters[preio->index_re_first_xe+point];
+      point++;
+    }
+    while( preio->reionization_parameters[preio->index_re_first_z+point] < 25) {
+      sum = 0;
+      pvecxe[point] = 0;
+      for( ix=0; ix<preio->re_z_size; ix++) {
+	double chi = ( log(1+preio->reionization_parameters[preio->index_re_first_z+ix]) - log(1+preio->reionization_parameters[preio->index_re_first_z+point]))/sigma;
+	double kernel = exp( -0.5*chi*chi) / (sqrt(2 * _PI_) * sigma);
+	pvecxe[point] += preio->reionization_parameters[preio->index_re_first_xe+ix]*kernel;
+	sum += kernel;
+      }
+      if( sum != 0) pvecxe[point] /= sum;
+      point++;
+    }
+    for( ix=0; ix<preio->re_z_size; ix++) 
+      if(pvecxe[ix] > 0.) preio->reionization_parameters[preio->index_re_first_xe+ix] = pvecxe[ix];
+      else preio->reionization_parameters[preio->index_re_first_xe+ix] = 1e-4;
+    free( pvecxe);
+    
     break;
+
 
   default:
     class_stop(pth->error_message,
