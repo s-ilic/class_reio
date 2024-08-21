@@ -1415,7 +1415,7 @@ int thermodynamics_set_parameters_reionization(
                     bin-1,pth->many_tanh_xe[bin-1]);
         }
       }
-      else {
+      else if (pth->many_tanh_xe_scheme == 1) {
         /* check that xe input can be interpreted by the code */
         if ((xe_input<=1.) && (xe_input>=0.)) {
             xe_actual = xe_input * (1. + pth->YHe/(_not4_*(1.-pth->YHe)));
@@ -1427,6 +1427,21 @@ int thermodynamics_set_parameters_reionization(
         else {
             class_stop(pth->error_message,
                     "Your entry for many_tanh_xe[%d] is %e, this makes no sense (has to be between 0 and 2)",
+                    bin-1,pth->many_tanh_xe[bin-1]);
+        }
+      }
+      else {
+        /* check that xe input can be interpreted by the code */
+        if ((xe_input<=1.08) && (xe_input>=0.)) {
+            xe_actual = xe_input/1.08 * (1. + pth->YHe/(_not4_*(1.-pth->YHe)));
+        }
+        else if ((xe_input<=1.16) && (xe_input>1.08)) {
+            xe_actual = 1. + (xe_input-1.)/0.08 * pth->YHe/(_not4_*(1.-pth->YHe));
+        }
+        //other number is nonsense
+        else {
+            class_stop(pth->error_message,
+                    "Your entry for many_tanh_xe[%d] is %e, this makes no sense (has to be between 0 and 1.16)",
                     bin-1,pth->many_tanh_xe[bin-1]);
         }
       }
