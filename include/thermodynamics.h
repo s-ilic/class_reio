@@ -137,6 +137,8 @@ struct thermodynamics
 
   double * many_tanh_width; /**< sharpness of tanh() steps */
 
+  int many_tanh_xe_scheme; /**< which scheme to we want to use to interpret the provided input "xe"? */
+
   /** parameters for reio_inter */
 
   int reio_inter_num; /**< with how many jumps do we want to describe reionization? */
