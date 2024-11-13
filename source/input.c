@@ -2194,6 +2194,8 @@ int input_read_parameters_general(struct file_content * pfc,
 
   /** 8) Reionization parametrization */
 
+    class_read_int("calc_tau_method",pth->calc_tau_method);
+
     class_read_double("reio_zmax_calc_tau",pth->reio_zmax_calc_tau);
 
     /* select interpolation type (==0 standard spline, !=0 PCHIP interpolation)*/
@@ -5769,6 +5771,7 @@ int input_default_params(struct background *pba,
   pth->reio_z_or_tau=reio_z;
   pth->z_reio=7.6711;
   pth->tau_reio=0.05430842;
+  pth->calc_tau_method=0;
   pth->reio_zmax_calc_tau=-1.;
   pth->reionization_exponent=1.5;
   pth->reionization_width=0.5;

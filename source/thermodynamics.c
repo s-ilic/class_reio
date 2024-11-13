@@ -3312,89 +3312,190 @@ int thermodynamics_reionization_get_tau(
   int index_z,index_reio_start=0;
   double x_e_min,z_diff_min;
 
-  x_e_min = _HUGE_;
-  z_diff_min = _HUGE_;
+  int index_z_lo;
+  int index_z_hi;
+  int highest_index_z=0;
+  int i,j,nx;
+  double h1,h2,y0,y1,y2,d1,d2,w1,w2,t;
+  double x0,x1,f0,f1;
+  double xx;
+  double * f;
+  double * g;
 
-  /**
-   * We are searching now for the start of reionization. This will be
-   * the time at which the optical depth tau_reio will be computed.
-   *
-   * Note that the value reionization_parameters[index_reio_start] is
-   * only the start of the reionization function added manually, but
-   * not necessarily the total start of reionization. Reionization
-   * could be longer/shifted by energy injection.
-   *
-   * The actual the definition of tau_reio is not unique and
-   * unambiguous. We defined it here to be the optical depth up to the
-   * time at which there is a global minimum in the free electron
-   * fraction. We search for this time by iterating over the
-   * thermodynamics table, in order to find the corresponding
-   * index_reio_start.
-   */
+  if (pth->calc_tau_method == 0) {
+    x_e_min = _HUGE_;
+    z_diff_min = _HUGE_;
 
-  // Computing the max redshift for tau calculation
-  if (pth->reio_zmax_calc_tau <= 0.) { // Original case: use z of smallest xe
-    for (index_z=0; index_z<pth->tt_size-1; index_z++) {
-      if (pth->thermodynamics_table[index_z*pth->th_size+pth->index_th_xe] < x_e_min) {
-        x_e_min = pth->thermodynamics_table[index_z*pth->th_size+pth->index_th_xe];
-        index_reio_start = index_z;
-      }
-    }
-  }
-  else { // New case: use z closest to the one provided by user
-    for (index_z=0; index_z<pth->tt_size-1; index_z++) {
-        if (abs(pth->z_table[index_z]-pth->reio_zmax_calc_tau) < z_diff_min) {
-            z_diff_min = abs(pth->z_table[index_z]-pth->reio_zmax_calc_tau);
+    /**
+     * We are searching now for the start of reionization. This will be
+     * the time at which the optical depth tau_reio will be computed.
+     *
+     * Note that the value reionization_parameters[index_reio_start] is
+     * only the start of the reionization function added manually, but
+     * not necessarily the total start of reionization. Reionization
+     * could be longer/shifted by energy injection.
+     *
+     * The actual the definition of tau_reio is not unique and
+     * unambiguous. We defined it here to be the optical depth up to the
+     * time at which there is a global minimum in the free electron
+     * fraction. We search for this time by iterating over the
+     * thermodynamics table, in order to find the corresponding
+     * index_reio_start.
+     */
+
+    // Computing the max redshift for tau calculation
+    if (pth->reio_zmax_calc_tau <= 0.) { // Original case: use z of smallest xe
+        for (index_z=0; index_z<pth->tt_size-1; index_z++) {
+        if (pth->thermodynamics_table[index_z*pth->th_size+pth->index_th_xe] < x_e_min) {
+            x_e_min = pth->thermodynamics_table[index_z*pth->th_size+pth->index_th_xe];
             index_reio_start = index_z;
         }
+        }
     }
+    else { // New case: use z closest to the one provided by user
+        for (index_z=0; index_z<pth->tt_size-1; index_z++) {
+            if (abs(pth->z_table[index_z]-pth->reio_zmax_calc_tau) < z_diff_min) {
+                z_diff_min = abs(pth->z_table[index_z]-pth->reio_zmax_calc_tau);
+                index_reio_start = index_z;
+            }
+        }
+    }
+
+    class_test(index_reio_start == pth->tt_size,
+                pth->error_message,
+                "reionization start = %e > largest redshift in thermodynamics table",pth->z_table[index_reio_start]);
+
+    if (index_reio_start == 0) {
+        /* the global minimum of xe(z) is at z=0. This is possible in
+        models no reionization and no exotic energy
+        injection. According to our definition of the reionization
+        optical depth, tau_reio should then be zero. */
+        ptw->reionization_optical_depth = 0;
+        return _SUCCESS_;
+    }
+    if (index_reio_start < 3) {
+        /* we need a minimum of three values to do a spline integration in the next step */
+        index_reio_start =3;
+    }
+
+    /** - --> spline \f$ d \tau / dz \f$ with respect to z in view of
+     *         integrating for optical depth between 0 and the just found
+     *         starting index
+     */
+    class_call(array_spline_table_line_to_line(pth->tau_table,
+                                                index_reio_start,
+                                                pth->thermodynamics_table,
+                                                pth->th_size,
+                                                pth->index_th_dkappa,
+                                                pth->index_th_dddkappa,
+                                                _SPLINE_EST_DERIV_,
+                                                pth->error_message),
+                pth->error_message,
+                pth->error_message);
+
+    /** - --> integrate for optical depth */
+    class_call(array_integrate_all_spline_table_line_to_line(pth->tau_table,
+                                                            index_reio_start,
+                                                            pth->thermodynamics_table,
+                                                            pth->th_size,
+                                                            pth->index_th_dkappa,
+                                                            pth->index_th_dddkappa,
+                                                            &(ptw->reionization_optical_depth),
+                                                            pth->error_message),
+                pth->error_message,
+                pth->error_message);
+
+    ptw->reionization_optical_depth *= -1; // tau and z go in reverse order, so we must flip the sign
   }
+  else {
 
-  class_test(index_reio_start == pth->tt_size,
-             pth->error_message,
-             "reionization start = %e > largest redshift in thermodynamics table",pth->z_table[index_reio_start]);
+    /** Find the index of the z array corresponding to the taus redshift bounds */
+    index_z_lo = 0;
+    index_z_hi = pth->tt_size-1;
+    for (j=0; j<pth->tt_size; j++) {
+        if (pth->z_table[j] >= pth->reio_zmax_calc_tau) {
+            index_z_hi = j;
+            break;
+        }
+    }
 
-  if (index_reio_start == 0) {
-    /* the global minimum of xe(z) is at z=0. This is possible in
-       models no reionization and no exotic energy
-       injection. According to our definition of the reionization
-       optical depth, tau_reio should then be zero. */
-    ptw->reionization_optical_depth = 0;
-    return _SUCCESS_;
+    /** Compute PCHIP slopes for dkappa up to pth->tau_table[highest_index_z]   */
+    /** WARNING : pth->tau_table is in decreasing order !!!                     */
+    /**           hence all formulas use pth->tau_table[0]-pth->tau_table as x  */
+    nx = index_z_hi + 1;
+    f = malloc(nx * sizeof(double));
+    // Special case i == 0
+    h1 = pth->tau_table[0] - pth->tau_table[1];
+    h2 = pth->tau_table[1] - pth->tau_table[2];
+    y0 = pth->thermodynamics_table[pth->index_th_dkappa];
+    y1 = pth->thermodynamics_table[1*pth->th_size+pth->index_th_dkappa];
+    y2 = pth->thermodynamics_table[2*pth->th_size+pth->index_th_dkappa];
+    d1 = (y1-y0) / h1;
+    d2 = (y2-y1) / h2;
+    t = ((2. * h1 + h2) * d1 - h1 * d2) / (h1 + h2);
+    f[0] = t;
+    if (SIGNUM(t)!=SIGNUM(d1)) {
+        f[0] = 0.;
+    }
+    else if ((SIGNUM(d1)!=SIGNUM(d2)) && (fabs(t)>fabs(3.*d1))) {
+        f[0] = 3. * d1;
+    }
+    // All other i
+    for (i=1; i < nx; i++) {
+        h1 = pth->tau_table[i-1] - pth->tau_table[i];
+        h2 = pth->tau_table[i] - pth->tau_table[i+1];
+        y0 = pth->thermodynamics_table[(i-1)*pth->th_size+pth->index_th_dkappa];
+        y1 = pth->thermodynamics_table[i*pth->th_size+pth->index_th_dkappa];
+        y2 = pth->thermodynamics_table[(i+1)*pth->th_size+pth->index_th_dkappa];
+        d1 = (y1-y0) / h1;
+        d2 = (y2-y1) / h2;
+        if (SIGNUM(d1)!=SIGNUM(d2)) {
+        f[i] = 0.;
+        }
+        else {
+        w1 = 2. * h2 + h1;
+        w2 = h2 + 2. * h1;
+        f[i] = (w1 + w2) / (w1 / d1 + w2 / d2);
+        }
+    }
+
+    /** Compute integral of PCHIP for each time interval */
+    g = malloc(nx * sizeof(double));
+    g[0] = 0.;
+    for (i=1; i < nx; i++) {
+        x0 = pth->tau_table[0] - pth->tau_table[i-1];
+        x1 = pth->tau_table[0] - pth->tau_table[i];
+        f0 = f[i-1];
+        f1 = f[i];
+        y0 = pth->thermodynamics_table[(i-1)*pth->th_size+pth->index_th_dkappa];
+        y1 = pth->thermodynamics_table[i*pth->th_size+pth->index_th_dkappa];
+        g[i] = (x0 - x1) * ((f0 - f1) * (x0 - x1) - 6 * (y0 + y1)) / 12.;
+    }
+
+    /** Compute tau */
+    ptw->reionization_optical_depth = 0.;
+    // Add the intervals fully inside the two z bounds
+    for (j=1; j<index_z_hi; j++) {
+        ptw->reionization_optical_depth += g[j];
+    }
+    // Add the bit at the end
+    x0 = pth->tau_table[0] - pth->tau_table[index_z_hi-1];
+    x1 = pth->tau_table[0] - pth->tau_table[index_z_hi];
+    f0 = f[index_z_hi-1];
+    f1 = f[index_z_hi];
+    y0 = pth->thermodynamics_table[(index_z_hi-1)*pth->th_size+pth->index_th_dkappa];
+    y1 = pth->thermodynamics_table[index_z_hi*pth->th_size+pth->index_th_dkappa];
+    class_call(background_tau_of_z(pba,pth->reio_zmax_calc_tau,&(xx)),
+            pba->error_message,
+            pth->error_message);
+    xx = pth->tau_table[0] - xx;
+    ptw->reionization_optical_depth += -1./12.*(f1*(x0 - x1)*pow(x0 - xx,3)*(x0 - 4*x1 + 3*xx) -
+            f0*(x0 - x1)*pow(x0 - xx,2)*(x0*x0 + 6*x1*x1 - 8*x1*xx + 3*xx*xx + 2*x0*(-2*x1 + xx)) + 6*(2*x0*pow(x0 - x1,3) - 2*(x0 - x1)*pow(x0 - xx,3) + pow(x0 - xx,4) - 2*pow(x0 - x1,3)*xx)*y0 + 6*pow(x0 - xx,3)*(x0 - 2*x1 + xx)*y1)/pow(x0 - x1,3);
+
+    /** Free up arrays */
+    free(f);
+    free(g);
   }
-  if (index_reio_start < 3) {
-    /* we need a minimum of three values to do a spline integration in the next step */
-    index_reio_start =3;
-  }
-
-  /** - --> spline \f$ d \tau / dz \f$ with respect to z in view of
-   *         integrating for optical depth between 0 and the just found
-   *         starting index
-   */
-  class_call(array_spline_table_line_to_line(pth->tau_table,
-                                             index_reio_start,
-                                             pth->thermodynamics_table,
-                                             pth->th_size,
-                                             pth->index_th_dkappa,
-                                             pth->index_th_dddkappa,
-                                             _SPLINE_EST_DERIV_,
-                                             pth->error_message),
-             pth->error_message,
-             pth->error_message);
-
-  /** - --> integrate for optical depth */
-  class_call(array_integrate_all_spline_table_line_to_line(pth->tau_table,
-                                                           index_reio_start,
-                                                           pth->thermodynamics_table,
-                                                           pth->th_size,
-                                                           pth->index_th_dkappa,
-                                                           pth->index_th_dddkappa,
-                                                           &(ptw->reionization_optical_depth),
-                                                           pth->error_message),
-             pth->error_message,
-             pth->error_message);
-
-  ptw->reionization_optical_depth *= -1; // tau and z go in reverse order, so we must flip the sign
 
   return _SUCCESS_;
 }
@@ -3435,8 +3536,9 @@ int thermodynamics_reionization_get_taus(
       if (pth->z_table[j] <= pth->reio_taus_zmin[i]) {
         index_z_lo[i] = j;
       }
-      if ((pth->z_table[j] >= pth->reio_taus_zmax[i]) && (index_z_hi[i] == pth->tt_size-1)) {
+      if (pth->z_table[j] >= pth->reio_taus_zmax[i]) {
         index_z_hi[i] = j;
+        break;
       }
     }
     if (index_z_hi[i] > highest_index_z) {
@@ -3507,6 +3609,10 @@ int thermodynamics_reionization_get_taus(
     // Add the bit at the beginning
     x0 = pth->tau_table[0] - pth->tau_table[index_z_lo[i]];
     x1 = pth->tau_table[0] - pth->tau_table[index_z_lo[i]+1];
+    f0 = f[index_z_lo[i]];
+    f1 = f[(index_z_lo[i]+1)];
+    y0 = pth->thermodynamics_table[index_z_lo[i]*pth->th_size+pth->index_th_dkappa];
+    y1 = pth->thermodynamics_table[(index_z_lo[i]+1)*pth->th_size+pth->index_th_dkappa];
     class_call(background_tau_of_z(pba,pth->reio_taus_zmin[i],&(xx)),
                pba->error_message,
                pth->error_message);
@@ -3518,6 +3624,10 @@ int thermodynamics_reionization_get_taus(
     // Add the bit at the end
     x0 = pth->tau_table[0] - pth->tau_table[index_z_hi[i]-1];
     x1 = pth->tau_table[0] - pth->tau_table[index_z_hi[i]];
+    f0 = f[index_z_hi[i]-1];
+    f1 = f[index_z_hi[i]];
+    y0 = pth->thermodynamics_table[(index_z_hi[i]-1)*pth->th_size+pth->index_th_dkappa];
+    y1 = pth->thermodynamics_table[index_z_hi[i]*pth->th_size+pth->index_th_dkappa];
     class_call(background_tau_of_z(pba,pth->reio_taus_zmax[i],&(xx)),
                pba->error_message,
                pth->error_message);

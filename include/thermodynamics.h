@@ -99,6 +99,8 @@ struct thermodynamics
   /** parameters for additional optical depth calculations (ADD COMMENTS) */
   double reio_zmax_calc_tau;
 
+  int calc_tau_method;
+
   int reio_taus_num;
 
   double * reio_taus_zmin;
