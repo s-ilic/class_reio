@@ -1306,7 +1306,11 @@ int numjac(
                error_message,error_message);
 
     *nfe+=1;
-    for(i=1;i<=neq;i++) nj_ws->ydel_Fdel[i][j] = nj_ws->ffdel[i];
+    //for(i=1;i<=neq;i++) nj_ws->ydel_Fdel[i][j] = nj_ws->ffdel[i];
+    for(i=1;i<=neq;i++){
+      class_test(nj_ws->ffdel[i] != nj_ws->ffdel[i], error_message, "A derivative passed to numjac was NaN.");
+      nj_ws->ydel_Fdel[i][j] = nj_ws->ffdel[i];
+    }
   }
 
 
@@ -1324,6 +1328,7 @@ int numjac(
         row = Ai[i]+1;
         /* Do I want to construct the full jacobian? No, that is ugly..*/
         Fdiff_absrm = MAX(Fdiff_absrm,fabs(Fdiff_new));
+        class_test(nj_ws->ffdel[i] != nj_ws->ffdel[i], error_message, "A derivative passed to numjac was NaN.");
         Fdiff_new = nj_ws->ydel_Fdel[row][group+1]-fval[row]; /*Remember to access the column of the corresponding group */
         if (fabs(Fdiff_new)>=Fdiff_absrm){
           nj_ws->Rowmax[j+1] = row;
