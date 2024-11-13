@@ -673,34 +673,63 @@ cdef class Class:
 
         # For density Cls, the size is bigger (different redshfit bins)
         # computes the size, given the number of correlations needed to be computed
-        size = int((self.hr.d_size*(self.hr.d_size+1)-(self.hr.d_size-self.hr.non_diag)*
-                (self.hr.d_size-1-self.hr.non_diag))/2);
-        for elem in ['dd', 'll', 'dl']:
+        #size = int((self.hr.d_size*(self.hr.d_size+1)-(self.hr.d_size-self.hr.non_diag)*
+        #        (self.hr.d_size-1-self.hr.non_diag))/2);
+        size_dd = int((self.hr.d_size*(self.hr.d_size+1)-(self.hr.d_size-self.hr.non_diag)*
+                (self.hr.d_size-1-self.hr.non_diag))/2); # NEW SILIC
+        size_ll = int((self.hr.d_size*(self.hr.d_size+1)-(self.hr.d_size-self.hr.non_diag)*
+                (self.hr.d_size-1-self.hr.non_diag))/2); # NEW SILIC
+        size_dl = int((self.hr.d_size*self.hr.d_size-(self.hr.d_size-self.hr.non_diag)*
+                (self.hr.d_size-1-self.hr.non_diag))); # NEW SILIC
+        #for elem in ['dd', 'll', 'dl']: # SILIC comment
+        for size, elem in zip([size_dd, size_ll, size_dl], ['dd', 'll', 'dl']): # NEW SILIC
             if elem in spectra:
                 cl[elem] = {}
                 for index in range(size):
                     cl[elem][index] = np.zeros(
                         lmax+1, dtype=np.double)
+        size_xc = self.hr.d_size # NEW SILIC
+        # BEGIN SILIC comment
+        #for elem in ['td', 'tl']:
+        #    if elem in spectra:
+        #        cl[elem] = np.zeros(lmax+1, dtype=np.double)
+        # END SILIC comment
+        # BEGIN NEW SILIC
         for elem in ['td', 'tl']:
             if elem in spectra:
-                cl[elem] = np.zeros(lmax+1, dtype=np.double)
+                cl[elem] = {}
+                for index in range(size_xc):
+                    cl[elem][index] = np.zeros(
+                        lmax+1, dtype=np.double)
+        # END NEW SILIC
 
         for ell from 2<=ell<lmax+1:
             if harmonic_cl_at_l(&self.hr, ell, dcl, cl_md, cl_md_ic) == _FAILURE_:
                 raise CosmoSevereError(self.hr.error_message)
             if 'dd' in spectra:
-                for index in range(size):
+                #for index in range(size): # SILIC comment
+                for index in range(size_dd): # NEW SILIC
                     cl['dd'][index][ell] = dcl[self.hr.index_ct_dd+index]
             if 'll' in spectra:
-                for index in range(size):
+                #for index in range(size): # SILIC comment
+                for index in range(size_ll): # NEW SILIC
                     cl['ll'][index][ell] = dcl[self.hr.index_ct_ll+index]
             if 'dl' in spectra:
-                for index in range(size):
+                #for index in range(size): # SILIC comment
+                for index in range(size_dl): # NEW SILIC
                     cl['dl'][index][ell] = dcl[self.hr.index_ct_dl+index]
             if 'td' in spectra:
-                cl['td'][ell] = dcl[self.hr.index_ct_td]
+                #cl['td'][ell] = dcl[self.hr.index_ct_td]
+                # NEW SILIC
+                for index in range(size_xc):
+                    cl['td'][index][ell] = dcl[self.hr.index_ct_td+index]
+                # END NEW SILIC
             if 'tl' in spectra:
-                cl['tl'][ell] = dcl[self.hr.index_ct_tl]
+                #cl['tl'][ell] = dcl[self.hr.index_ct_tl]
+                # NEW SILIC
+                for index in range(size_xc):
+                    cl['tl'][index][ell] = dcl[self.hr.index_ct_tl+index]
+                # END NEW SILIC
         cl['ell'] = np.arange(lmax+1)
 
         free(dcl)
