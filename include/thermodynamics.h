@@ -101,6 +101,8 @@ struct thermodynamics
 
   int calc_tau_method;
 
+  int recalc_tau;
+
   int reio_taus_num;
 
   double * reio_taus_zmin;

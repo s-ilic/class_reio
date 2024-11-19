@@ -1915,7 +1915,8 @@ int thermodynamics_solve(
   }
 
   /** - Compute reionization optical depth, if not supplied as input parameter */
-  if (pth->reio_z_or_tau == reio_z) {
+  /** NEW: can also force recomputation if requested */
+  if ((pth->reio_z_or_tau == reio_z) || (pth->recalc_tau != 0)) {
 
     class_call(thermodynamics_reionization_get_tau(ppr,
                                                    pba,
@@ -2538,7 +2539,7 @@ int thermodynamics_reionization_evolve_with_tau(
     ptw->ptrp->reionization_parameters[ptw->ptrp->index_re_reio_start] = z_sup;
     break;
   default:
-    class_stop(pth->error_message,"Should not be there: tau_reio acan be an input only for reio_camb and reio_half_tanh");
+    class_stop(pth->error_message,"Should not be there: tau_reio can be an input only for reio_camb and reio_half_tanh");
     break;
   }
 
