@@ -171,9 +171,7 @@ struct thermodynamics
 
   int reio_flexknot_smooth_start;
 
-//   double reio_flexknot_tau;
-
-//   double reio_flexknot_rescale;
+  int reio_flexknot_add_HeII_tanh;
 
   /** parameters for energy injection */
 

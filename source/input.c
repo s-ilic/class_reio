@@ -2331,8 +2331,11 @@ int input_read_parameters_general(struct file_content * pfc,
     class_read_list_of_doubles("reio_flexknot_z",pth->reio_flexknot_z,pth->reio_flexknot_num);
     class_read_list_of_doubles("reio_flexknot_xe",pth->reio_flexknot_xe,pth->reio_flexknot_num);
     class_read_int("reio_flexknot_smooth_start",pth->reio_flexknot_smooth_start);
-    // class_read_int("reio_flexknot_tau",pth->reio_flexknot_tau);
-    // class_read_int("reio_flexknot_rescale",pth->reio_flexknot_rescale);
+    class_read_int("reio_flexknot_add_HeII_tanh",pth->reio_flexknot_add_HeII_tanh);
+    if (pth->reio_flexknot_add_HeII_tanh != 0) {
+        class_read_double("helium_fullreio_redshift",pth->helium_fullreio_redshift);
+        class_read_double("helium_fullreio_width",pth->helium_fullreio_width);
+    }
     break;
 
   default:
@@ -5806,6 +5809,7 @@ int input_default_params(struct background *pba,
   pth->reio_flexknot_z = NULL;
   pth->reio_flexknot_xe = NULL;
   pth->reio_flexknot_smooth_start = 0;
+  pth->reio_flexknot_add_HeII_tanh = 0;
 
 
   /** 9) Damping scale */

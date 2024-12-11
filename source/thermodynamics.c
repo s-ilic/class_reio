@@ -1084,6 +1084,11 @@ int thermodynamics_indices(
     class_define_index(ptrp->index_re_first_xe,_TRUE_,index_re,ptrp->re_z_size);
     class_define_index(ptrp->index_re_first_f,_TRUE_,index_re,ptrp->re_z_size);
     class_define_index(ptrp->index_re_xe_before,_TRUE_,index_re,1);
+    if (pth->reio_flexknot_add_HeII_tanh != 0) {
+        class_define_index(ptrp->index_re_helium_fullreio_fraction,_TRUE_,index_re,1);
+        class_define_index(ptrp->index_re_helium_fullreio_redshift,_TRUE_,index_re,1);
+        class_define_index(ptrp->index_re_helium_fullreio_width,_TRUE_,index_re,1);
+    }
     break;
 
   default:
@@ -1585,6 +1590,16 @@ int thermodynamics_set_parameters_reionization(
 
     /** - (g) if reionization implemented with reio_flexknot scheme */
   case reio_flexknot:
+
+    if (pth->reio_flexknot_add_HeII_tanh != 0) {
+        preio->reionization_parameters[preio->index_re_helium_fullreio_fraction] = pth->YHe/(_not4_*(1.-pth->YHe));
+        preio->reionization_parameters[preio->index_re_helium_fullreio_redshift] = pth->helium_fullreio_redshift;
+        preio->reionization_parameters[preio->index_re_helium_fullreio_width] = pth->helium_fullreio_width;
+
+        class_test(preio->reionization_parameters[preio->index_re_helium_fullreio_width]==0,
+                pth->error_message,
+                "stop to avoid division by zero");
+    }
 
     /* this parametrization requires at least two (z,xe) knot */
     class_test(pth->reio_flexknot_num<2,
@@ -5012,6 +5027,15 @@ int thermodynamics_reionization_function(
                  z,
                  preio->reionization_parameters[preio->index_re_first_xe+i],
                  preio->reionization_parameters[preio->index_re_first_xe+i+1]);
+
+      if (pth->reio_flexknot_add_HeII_tanh != 0) {
+        /** - --> case z < z_reio_start: helium contribution (tanh of simpler argument) */
+        argument = (preio->reionization_parameters[preio->index_re_helium_fullreio_redshift] - z)
+            /preio->reionization_parameters[preio->index_re_helium_fullreio_width];
+
+        *x += preio->reionization_parameters[preio->index_re_helium_fullreio_fraction]
+            *(tanh(argument)+1.)/2.;
+      }
     }
     break;
 
