@@ -173,6 +173,8 @@ struct thermodynamics
 
   int reio_flexknot_add_HeII_tanh;
 
+  int reio_flexknot_xe_scheme;
+
   /** parameters for energy injection */
 
   short has_exotic_injection; /**< true if some exotic mechanism

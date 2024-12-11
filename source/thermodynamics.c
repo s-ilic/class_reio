@@ -1667,17 +1667,46 @@ int thermodynamics_set_parameters_reionization(
       else if (xe_input==-1.) {
         xe_actual = -1.;
       }
-      else if ((xe_input<=1.) && (xe_input>=0.)) {
-        xe_actual = xe_input * (1. + pth->YHe/(_not4_*(1.-pth->YHe)));
-      }
-      else if ((xe_input<=2.) && (xe_input>1.)) {
-        xe_actual = 1. + xe_input * pth->YHe/(_not4_*(1.-pth->YHe));
-      }
-      //other number is nonsense
       else {
-        class_stop(pth->error_message,
-                   "Your entry for reio_flexknot_xe[%d] is %e, this makes no sense (either -1 or between 0 and 2)",
-                   ix,xe_input);
+        if (pth->reio_flexknot_xe_scheme == 0) {
+            if (xe_input>=0.){
+                xe_actual = xe_input;
+            }
+            //other number is nonsense
+            else {
+                class_stop(pth->error_message,
+                        "Your entry for reio_flexknot_xe[%d] is %e, this makes no sense (has to be either -1 or >=0)",
+                        ix,xe_input);
+            }
+        }
+        else if (pth->reio_flexknot_xe_scheme == 1) {
+            if ((xe_input<=1.) && (xe_input>=0.)) {
+                xe_actual = xe_input * (1. + pth->YHe/(_not4_*(1.-pth->YHe)));
+            }
+            else if ((xe_input<=2.) && (xe_input>1.)) {
+                xe_actual = 1. + xe_input * pth->YHe/(_not4_*(1.-pth->YHe));
+            }
+            //other number is nonsense
+            else {
+                class_stop(pth->error_message,
+                        "Your entry for reio_flexknot_xe[%d] is %e, this makes no sense (has to be either -1 or between 0 and 2)",
+                        ix,xe_input);
+            }
+        }
+        else {
+            if ((xe_input<=1.08) && (xe_input>=0.)) {
+                xe_actual = xe_input/1.08 * (1. + pth->YHe/(_not4_*(1.-pth->YHe)));
+            }
+            else if ((xe_input<=1.16) && (xe_input>1.08)) {
+                xe_actual = 1. + (xe_input-1.)/0.08 * pth->YHe/(_not4_*(1.-pth->YHe));
+            }
+            //other number is nonsense
+            else {
+                class_stop(pth->error_message,
+                        "Your entry for reio_flexknot_xe[%d] is %e, this makes no sense (has to be either -1 or between 0 and 1.16)",
+                        ix,xe_input);
+            }
+        }
       }
       preio->reionization_parameters[preio->index_re_first_xe+ix] = xe_actual;
     }
