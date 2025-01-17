@@ -1549,22 +1549,56 @@ int thermodynamics_set_parameters_reionization(
 
       /* check that xe input can be interpreted by the code */
       xe_input = pth->reio_inter_xe[point];
-      if (xe_input >= 0.) {
-        xe_actual = xe_input;
+
+
+      if (pth->reio_inter_xe_scheme == 0) {
+        if (xe_input >= 0.) {
+            xe_actual = xe_input;
+        }
+        //-1 means "after hydrogen + first helium recombination"
+        else if ((xe_input<-0.9) && (xe_input>-1.1)) {
+            xe_actual = 1. + pth->YHe/(_not4_*(1.-pth->YHe));
+        }
+        //-2 means "after hydrogen + second helium recombination"
+        else if ((xe_input<-1.9) && (xe_input>-2.1)) {
+            xe_actual = 1. + 2.*pth->YHe/(_not4_*(1.-pth->YHe));
+        }
+        //other negative number is nonsense
+        else {
+            class_stop(pth->error_message,
+                    "Your entry for reio_inter_xe[%d] is %e, this makes no sense (either positive or 0,-1,-2)",
+                    point,pth->reio_inter_xe[point]);
+        }
       }
-      //-1 means "after hydrogen + first helium recombination"
-      else if ((xe_input<-0.9) && (xe_input>-1.1)) {
-        xe_actual = 1. + pth->YHe/(_not4_*(1.-pth->YHe));
+      else if (pth->reio_inter_xe_scheme == 1) {
+        /* check that xe input can be interpreted by the code */
+        if ((xe_input<=1.) && (xe_input>=0.)) {
+            xe_actual = xe_input * (1. + pth->YHe/(_not4_*(1.-pth->YHe)));
+        }
+        else if ((xe_input<=2.) && (xe_input>1.)) {
+            xe_actual = 1. + xe_input * pth->YHe/(_not4_*(1.-pth->YHe));
+        }
+        //other number is nonsense
+        else {
+            class_stop(pth->error_message,
+                    "Your entry for reio_inter_xe[%d] is %e, this makes no sense (has to be between 0 and 2)",
+                    point,pth->reio_inter_xe[point]);
+        }
       }
-      //-2 means "after hydrogen + second helium recombination"
-      else if ((xe_input<-1.9) && (xe_input>-2.1)) {
-        xe_actual = 1. + 2.*pth->YHe/(_not4_*(1.-pth->YHe));
-      }
-      //other negative number is nonsense
       else {
-        class_stop(pth->error_message,
-                   "Your entry for reio_inter_xe[%d] is %e, this makes no sense (either positive or 0,-1,-2)",
-                   point,pth->reio_inter_xe[point]);
+        /* check that xe input can be interpreted by the code */
+        if ((xe_input<=1.08) && (xe_input>=0.)) {
+            xe_actual = xe_input/1.08 * (1. + pth->YHe/(_not4_*(1.-pth->YHe)));
+        }
+        else if ((xe_input<=1.16) && (xe_input>1.08)) {
+            xe_actual = 1. + (xe_input-1.)/0.08 * pth->YHe/(_not4_*(1.-pth->YHe));
+        }
+        //other number is nonsense
+        else {
+            class_stop(pth->error_message,
+                    "Your entry for reio_inter_xe[%d] is %e, this makes no sense (has to be between 0 and 1.16)",
+                    point,pth->reio_inter_xe[point]);
+        }
       }
 
       preio->reionization_parameters[preio->index_re_first_xe+point] = xe_actual;

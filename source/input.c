@@ -2312,6 +2312,7 @@ int input_read_parameters_general(struct file_content * pfc,
     class_read_list_of_doubles("reio_inter_z",pth->reio_inter_z,pth->reio_inter_num);
     class_read_list_of_doubles("reio_inter_xe",pth->reio_inter_xe,pth->reio_inter_num);
     class_read_int("reio_inter_add_HeII_tanh",pth->reio_inter_add_HeII_tanh);
+    class_read_int("reio_inter_xe_scheme",pth->reio_inter_xe_scheme);
     if (pth->reio_inter_add_HeII_tanh != 0) {
         class_read_double("helium_fullreio_redshift",pth->helium_fullreio_redshift);
         class_read_double("helium_fullreio_width",pth->helium_fullreio_width);
@@ -5811,6 +5812,7 @@ int input_default_params(struct background *pba,
   pth->reio_inter_z = NULL;
   pth->reio_inter_xe = NULL;
   pth->reio_inter_add_HeII_tanh = 0;
+  pth->reio_inter_xe_scheme=0;
   /** 8.e) 'reio_asymm' case */
   pth->reio_asymm_zend = 6.;
   pth->reio_asymm_zbeg = 14.;
