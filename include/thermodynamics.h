@@ -151,6 +151,10 @@ struct thermodynamics
 
   double * reio_inter_xe; /**< discrete \f$ X_e(z)\f$ values */
 
+  int reio_inter_add_HeII_tanh;
+
+  int reio_inter_xe_scheme;
+
   /** parameters for reio_asymm (ADD COMMENTS) */
 
   double reio_asymm_zend;
@@ -158,6 +162,8 @@ struct thermodynamics
   double reio_asymm_zbeg;
 
   double reio_asymm_alpha;
+
+  int reio_asymm_add_HeII_tanh;
 
   /** parameters for reio_flexknot (ADD COMMENTS) */
 
