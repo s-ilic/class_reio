@@ -2196,6 +2196,8 @@ int input_read_parameters_general(struct file_content * pfc,
 
     class_read_int("calc_tau_method",pth->calc_tau_method);
 
+    class_read_double("reio_zmin_calc_tau",pth->reio_zmin_calc_tau);
+
     class_read_double("reio_zmax_calc_tau",pth->reio_zmax_calc_tau);
 
     class_read_int("recalc_tau",pth->recalc_tau);
@@ -5789,6 +5791,7 @@ int input_default_params(struct background *pba,
   pth->z_reio=7.6711;
   pth->tau_reio=0.05430842;
   pth->calc_tau_method=0;
+  pth->reio_zmin_calc_tau=0.;
   pth->reio_zmax_calc_tau=-1.;
   pth->recalc_tau=0;
   pth->reionization_exponent=1.5;
