@@ -3522,7 +3522,6 @@ int thermodynamics_reionization_get_tau(
             break;
         }
     }
-    printf("index_z_lo = %d, index_z_hi = %d\n",index_z_lo,index_z_hi);
 
     /** Compute PCHIP slopes for dkappa up to pth->tau_table[highest_index_z]   */
     /** WARNING : pth->tau_table is in decreasing order !!!                     */
