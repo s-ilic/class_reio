@@ -3596,8 +3596,10 @@ int thermodynamics_reionization_get_tau(
                 pba->error_message,
                 pth->error_message);
         xx = pth->tau_table[0] - xx;
-        ptw->reionization_optical_depth += -1./12.*(f1*(x0 - x1)*pow(x0 - xx,3)*(x0 - 4*x1 + 3*xx) -
-                f0*(x0 - x1)*pow(x0 - xx,2)*(x0*x0 + 6*x1*x1 - 8*x1*xx + 3*xx*xx + 2*x0*(-2*x1 + xx)) + 6*(2*x0*pow(x0 - x1,3) - 2*(x0 - x1)*pow(x0 - xx,3) + pow(x0 - xx,4) - 2*pow(x0 - x1,3)*xx)*y0 + 6*pow(x0 - xx,3)*(x0 - 2*x1 + xx)*y1)/pow(x0 - x1,3);
+        ptw->reionization_optical_depth += ((x1 - xx)*(-(f1*(x0 - x1)*(x1 - xx)*
+        (6*x0*x0 + x1*x1 + 2*x1*xx + 3*xx*xx - 4*x0*(x1 + 2*xx))) -
+        pow(x1 - xx,2)*(f0*(x0 - x1)*(4*x0 - x1 - 3*xx) + 6*(-2*x0 + x1 + xx)*y0) -
+        6*(-2*x0*x0*x0 + 6*x0*x0*x1 + x1*x1*x1 + x1*x1*xx + x1*xx*xx - xx*xx*xx + 2*x0*(-2*x1*x1 - 2*x1*xx + xx*xx))*y1))/(12.*pow(x0 - x1,3));
     }
     // Add the bit from the last interval
     x0 = pth->tau_table[0] - pth->tau_table[index_z_hi-1];
