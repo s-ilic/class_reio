@@ -3584,23 +3584,21 @@ int thermodynamics_reionization_get_tau(
         ptw->reionization_optical_depth += (x0 - x1) * ((f0 - f1) * (x0 - x1) - 6 * (y0 + y1)) / 12.;
     }
 
-    // Add the bit from the first interval (only if index_z_lo != 0)
-    if (index_z_lo != 0) {
-        x0 = pth->tau_table[0] - pth->tau_table[index_z_lo];
-        x1 = pth->tau_table[0] - pth->tau_table[index_z_lo+1];
-        f0 = f[0];
-        f1 = f[1];
-        y0 = pth->thermodynamics_table[(index_z_lo)*pth->th_size+pth->index_th_dkappa];
-        y1 = pth->thermodynamics_table[(index_z_lo+1)*pth->th_size+pth->index_th_dkappa];
-        class_call(background_tau_of_z(pba,pth->reio_zmin_calc_tau,&(xx)),
-                pba->error_message,
-                pth->error_message);
-        xx = pth->tau_table[0] - xx;
-        ptw->reionization_optical_depth += ((x1 - xx)*(-(f1*(x0 - x1)*(x1 - xx)*
-        (6*x0*x0 + x1*x1 + 2*x1*xx + 3*xx*xx - 4*x0*(x1 + 2*xx))) -
-        pow(x1 - xx,2)*(f0*(x0 - x1)*(4*x0 - x1 - 3*xx) + 6*(-2*x0 + x1 + xx)*y0) -
-        6*(-2*x0*x0*x0 + 6*x0*x0*x1 + x1*x1*x1 + x1*x1*xx + x1*xx*xx - xx*xx*xx + 2*x0*(-2*x1*x1 - 2*x1*xx + xx*xx))*y1))/(12.*pow(x0 - x1,3));
-    }
+    // Add the bit from the first interval
+    x0 = pth->tau_table[0] - pth->tau_table[index_z_lo];
+    x1 = pth->tau_table[0] - pth->tau_table[index_z_lo+1];
+    f0 = f[0];
+    f1 = f[1];
+    y0 = pth->thermodynamics_table[(index_z_lo)*pth->th_size+pth->index_th_dkappa];
+    y1 = pth->thermodynamics_table[(index_z_lo+1)*pth->th_size+pth->index_th_dkappa];
+    class_call(background_tau_of_z(pba,pth->reio_zmin_calc_tau,&(xx)),
+                                   pba->error_message,
+                                   pth->error_message);
+    xx = pth->tau_table[0] - xx;
+    ptw->reionization_optical_depth += ((x1 - xx)*(-(f1*(x0 - x1)*(x1 - xx)*
+    (6*x0*x0 + x1*x1 + 2*x1*xx + 3*xx*xx - 4*x0*(x1 + 2*xx))) -
+    pow(x1 - xx,2)*(f0*(x0 - x1)*(4*x0 - x1 - 3*xx) + 6*(-2*x0 + x1 + xx)*y0) -
+    6*(-2*x0*x0*x0 + 6*x0*x0*x1 + x1*x1*x1 + x1*x1*xx + x1*xx*xx - xx*xx*xx + 2*x0*(-2*x1*x1 - 2*x1*xx + xx*xx))*y1))/(12.*pow(x0 - x1,3));
     // Add the bit from the last interval
     x0 = pth->tau_table[0] - pth->tau_table[index_z_hi-1];
     x1 = pth->tau_table[0] - pth->tau_table[index_z_hi];
