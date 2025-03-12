@@ -2327,8 +2327,6 @@ int input_read_parameters_general(struct file_content * pfc,
     class_read_double("reio_asymm_zend",pth->reio_asymm_zend);
     class_read_double("reio_asymm_zbeg",pth->reio_asymm_zbeg);
     class_read_double("reio_asymm_alpha",pth->reio_asymm_alpha);
-    class_read_double("helium_fullreio_redshift",pth->helium_fullreio_redshift);
-    class_read_double("helium_fullreio_width",pth->helium_fullreio_width);
     class_read_int("reio_asymm_add_HeII_tanh",pth->reio_asymm_add_HeII_tanh);
     if (pth->reio_asymm_add_HeII_tanh != 0) {
         class_read_double("helium_fullreio_redshift",pth->helium_fullreio_redshift);
